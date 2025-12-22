@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,10 +14,13 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    // TODO: connect API here
-    console.log({ email, password });
+    await signIn("credentials", {
+      email,
+      password,
+      callbackUrl: "/dashboard",
+    });
 
-    setTimeout(() => setLoading(false), 1000);
+    setLoading(false);
   };
 
   return (
