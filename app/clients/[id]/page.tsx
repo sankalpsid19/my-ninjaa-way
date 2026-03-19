@@ -1,0 +1,150 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import StatusToggle from "@/components/StatusToggle";
+
+// Extended mock data
+const mockClients = [
+  { id: "1", name: "Infinity Realtors", email: "alice@example.com", status: "Active", phone: "+1 234 567 8900", company: "Infinity Realtors", website: "https://infinity-realtors.vercel.app/", joinDate: "Jan 12, 2025", pocName: "Sharmistha Dey", pocEmail: "sharmisthamayur@gmail.com", clientName: "Alison Johnson" },
+  { id: "2", name: "Bob Smith", email: "bob@example.com", status: "Inactive", phone: "+1 987 654 3210", company: "Global Corp", website: "", joinDate: "Sep 05, 2024", pocName: "John Doe", pocEmail: "john@globalcorp.com", clientName: "Bob Smith" },
+  { id: "3", name: "Charlie Davis", email: "charlie@example.com", status: "Active", phone: "+1 555 123 4567", company: "StartUp Inc", website: "", joinDate: "Mar 22, 2026", pocName: "Sarah Connor", pocEmail: "sarah@startup.inc", clientName: "Charlie Davis" },
+  { id: "4", name: "Diana Prince", email: "diana@example.com", status: "Active", phone: "+1 800 123 4567", company: "Wonder Corp", website: "", joinDate: "Dec 10, 2025", pocName: "Steve Trevor", pocEmail: "steve@wonder.corp", clientName: "Diana Prince" },
+  { id: "5", name: "Evan Wright", email: "evan@example.com", status: "Inactive", phone: "+1 555 987 6543", company: "Wright Enterprises", website: "", joinDate: "Jun 15, 2023", pocName: "Oliver Queen", pocEmail: "oliver@wright.ent", clientName: "Evan Wright" },
+];
+
+export default async function ClientProfile({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const client = mockClients.find((c) => c.id === id);
+
+  if (!client) {
+    notFound();
+  }
+
+  return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-black font-sans py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-8">
+          <Link href="/clients" className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors inline-flex items-center">
+            <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Clients
+          </Link>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+          <div className="p-8 border-b border-zinc-200 dark:border-zinc-800">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">{client.name}</h1>
+                <p className="text-zinc-500 dark:text-zinc-400 mt-1">{client.company}</p>
+              </div>
+              <StatusToggle initialStatus={client.status} />
+            </div>
+          </div>
+
+          <div className="p-8 border-b border-zinc-100 dark:border-zinc-800/50">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-6">Contact Information</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">Client Name</p>
+                <p className="text-zinc-900 dark:text-zinc-100">{client.clientName || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">Email Address</p>
+                <p className="text-zinc-900 dark:text-zinc-100">{client.email}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">Phone Number</p>
+                <p className="text-zinc-900 dark:text-zinc-100">{client.phone}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">Member Since</p>
+                <p className="text-zinc-900 dark:text-zinc-100">{client.joinDate}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">Company Website</p>
+                <p className="text-zinc-900 dark:text-zinc-100">
+                  {client.website ? (
+                    <a href={client.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                      {client.website}
+                    </a>
+                  ) : (
+                    "N/A"
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-8 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800/50">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-6">Point of Contact (POC)</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">POC Name</p>
+                <p className="text-zinc-900 dark:text-zinc-100">{client.pocName || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">POC Email</p>
+                <p className="text-zinc-900 dark:text-zinc-100">{client.pocEmail || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Billing & Payments</h2>
+              <button className="text-sm px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium">
+                Record Payment
+              </button>
+            </div>
+            <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-xs uppercase text-zinc-500 dark:text-zinc-400 font-medium">
+                    <th className="py-4 px-5">Billing Period</th>
+                    <th className="py-4 px-5">Amount</th>
+                    <th className="py-4 px-5">Status</th>
+                    <th className="py-4 px-5">Date Paid</th>
+                    <th className="py-4 px-5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                  {/* Mock bills specifically for UI showcase */}
+                  {[
+                    { id: "b1", month: "March 2026", amount: "$1,200.00", status: "Pending", datePaid: "-", invoiceUri: "#" },
+                    { id: "b2", month: "February 2026", amount: "$1,200.00", status: "Paid", datePaid: "Feb 02, 2026", invoiceUri: "#" },
+                    { id: "b3", month: "January 2026", amount: "$1,200.00", status: "Paid", datePaid: "Jan 05, 2026", invoiceUri: "#" },
+                  ].map((bill) => (
+                    <tr key={bill.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors group">
+                      <td className="py-4 px-5 text-sm font-medium text-zinc-900 dark:text-zinc-100">{bill.month}</td>
+                      <td className="py-4 px-5 text-sm text-zinc-600 dark:text-zinc-300">{bill.amount}</td>
+                      <td className="py-4 px-5 text-sm">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          bill.status === 'Paid' 
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                            : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-500/90'
+                        }`}>
+                          {bill.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-5 text-sm text-zinc-500 dark:text-zinc-400">{bill.datePaid}</td>
+                      <td className="py-4 px-5 text-sm text-right">
+                        <a href={bill.invoiceUri} className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+                          Receipt
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
