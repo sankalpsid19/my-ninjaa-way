@@ -33,32 +33,32 @@ export default function BillingTable() {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Billing & Payments</h2>
+    <div className="p-5">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Billing & Payments</h2>
         <button className="text-sm px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium">
           Record Payment
         </button>
       </div>
       
-      <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm mb-6">
+      <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm mb-4">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-xs uppercase text-zinc-500 dark:text-zinc-400 font-medium">
-              <th className="py-4 px-5 whitespace-nowrap">Billing Period</th>
-              <th className="py-4 px-5 whitespace-nowrap">Amount</th>
-              <th className="py-4 px-5 whitespace-nowrap">Status</th>
-              <th className="py-4 px-5 whitespace-nowrap">Date Paid</th>
-              <th className="py-4 px-5 text-right whitespace-nowrap">Action</th>
+              <th className="py-2.5 px-4 whitespace-nowrap">Billing Period</th>
+              <th className="py-2.5 px-4 whitespace-nowrap">Amount</th>
+              <th className="py-2.5 px-4 whitespace-nowrap">Status</th>
+              <th className="py-2.5 px-4 whitespace-nowrap">Date Paid</th>
+              <th className="py-2.5 px-4 text-right whitespace-nowrap">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
             {currentRecords.map((bill) => (
               <tr key={bill.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors group">
-                <td className="py-4 px-5 text-sm font-medium text-zinc-900 dark:text-zinc-100 whitespace-nowrap">{bill.month}</td>
-                <td className="py-4 px-5 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">{bill.amount}</td>
-                <td className="py-4 px-5 text-sm whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                <td className="py-2.5 px-4 text-sm font-medium text-zinc-900 dark:text-zinc-100 whitespace-nowrap">{bill.month}</td>
+                <td className="py-2.5 px-4 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">{bill.amount}</td>
+                <td className="py-2.5 px-4 text-sm whitespace-nowrap">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     bill.status === 'Paid' 
                       ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' 
                       : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-500/90'
@@ -66,8 +66,8 @@ export default function BillingTable() {
                     {bill.status}
                   </span>
                 </td>
-                <td className="py-4 px-5 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{bill.datePaid}</td>
-                <td className="py-4 px-5 text-sm text-right whitespace-nowrap">
+                <td className="py-2.5 px-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{bill.datePaid}</td>
+                <td className="py-2.5 px-4 text-sm text-right whitespace-nowrap">
                   <a href={bill.invoiceUri} className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">
                     Receipt
                   </a>
