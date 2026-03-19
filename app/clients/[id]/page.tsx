@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import StatusToggle from "@/components/StatusToggle";
+import BillingTable from "@/components/BillingTable";
 
 // Extended mock data
 const mockClients = [
@@ -94,55 +95,7 @@ export default async function ClientProfile({
             </div>
           </div>
 
-          <div className="p-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Billing & Payments</h2>
-              <button className="text-sm px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium">
-                Record Payment
-              </button>
-            </div>
-            <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-xs uppercase text-zinc-500 dark:text-zinc-400 font-medium">
-                    <th className="py-4 px-5">Billing Period</th>
-                    <th className="py-4 px-5">Amount</th>
-                    <th className="py-4 px-5">Status</th>
-                    <th className="py-4 px-5">Date Paid</th>
-                    <th className="py-4 px-5 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                  {/* Mock bills specifically for UI showcase */}
-                  {[
-                    { id: "b1", month: "March 2026", amount: "$1,200.00", status: "Pending", datePaid: "-", invoiceUri: "#" },
-                    { id: "b2", month: "February 2026", amount: "$1,200.00", status: "Paid", datePaid: "Feb 02, 2026", invoiceUri: "#" },
-                    { id: "b3", month: "January 2026", amount: "$1,200.00", status: "Paid", datePaid: "Jan 05, 2026", invoiceUri: "#" },
-                  ].map((bill) => (
-                    <tr key={bill.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors group">
-                      <td className="py-4 px-5 text-sm font-medium text-zinc-900 dark:text-zinc-100">{bill.month}</td>
-                      <td className="py-4 px-5 text-sm text-zinc-600 dark:text-zinc-300">{bill.amount}</td>
-                      <td className="py-4 px-5 text-sm">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          bill.status === 'Paid' 
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' 
-                            : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-500/90'
-                        }`}>
-                          {bill.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-5 text-sm text-zinc-500 dark:text-zinc-400">{bill.datePaid}</td>
-                      <td className="py-4 px-5 text-sm text-right">
-                        <a href={bill.invoiceUri} className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
-                          Receipt
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <BillingTable />
         </div>
       </div>
     </div>
