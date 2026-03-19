@@ -5,16 +5,22 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  // Connection URL moved to prisma.config.ts
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id 
   email     String   @unique
+  isSubscribed Boolean  @default(false)
+  subscriptionEnds DateTime?
   name      String?
+  posts     Post[]
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
