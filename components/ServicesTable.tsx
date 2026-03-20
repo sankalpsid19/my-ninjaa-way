@@ -11,8 +11,13 @@ export type Service = {
   status: string;
 };
 
-export default function ServicesTable({ initialServices = [] }: { initialServices: Service[] }) {
-  const [services, setServices] = useState<Service[]>(initialServices);
+export default function ServicesTable({ 
+  services, 
+  setServices 
+}: { 
+  services: Service[]; 
+  setServices: React.Dispatch<React.SetStateAction<Service[]>>;
+}) {
   
   // Modals state
   const [isAddOpen, setIsAddOpen] = useState(false);

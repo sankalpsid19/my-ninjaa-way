@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Service } from "./ServicesTable";
 
 // Generate 14 mock bills for pagination demonstration
 const mockBills = Array.from({ length: 14 }).map((_, i) => {
@@ -15,8 +16,9 @@ const mockBills = Array.from({ length: 14 }).map((_, i) => {
   };
 });
 
-export default function BillingTable() {
+export default function BillingTable({ clientServices = [] }: { clientServices?: Service[] }) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const recordsPerPage = 5;
 
   const indexOfLastRecord = currentPage * recordsPerPage;
@@ -32,11 +34,25 @@ export default function BillingTable() {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
+  const validServices = clientServices.filter(s => {
+    if (s.status !== 'Active') return false;
+    const today = new Date().toISOString().split('T')[0];
+    if (s.startDate && s.endDate) {
+      if (today < s.startDate || today > s.endDate) return false;
+    }
+    return true;
+  });
+
+  const payableTotal = validServices.reduce((sum, s) => sum + s.price, 0);
+
   return (
     <div className="p-5">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Billing & Payments</h2>
-        <button className="text-sm px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium">
+        <button 
+          onClick={() => setIsRecordPaymentOpen(true)}
+          className="text-sm px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium text-center"
+        >
           Record Payment
         </button>
       </div>
@@ -122,6 +138,73 @@ export default function BillingTable() {
           </button>
         </div>
       </div>
+
+      {/* Record Payment Modal */}
+      {isRecordPaymentOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity">
+          <div className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transform transition-all scale-100">
+            <div className="p-6 border-b border-zinc-100 dark:border-zinc-800/50 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Record Payment</h3>
+              <button 
+                onClick={() => setIsRecordPaymentOpen(false)} 
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              >
+                <span className="sr-only">Close</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6 bg-zinc-50/50 dark:bg-zinc-900/30 max-h-[60vh] overflow-y-auto">
+              <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-4 uppercase tracking-wider">Valid Active Services</h4>
+              {validServices.length > 0 ? (
+                <div className="space-y-3 mb-6">
+                  {validServices.map(service => (
+                    <div key={service.id} className="flex justify-between items-center bg-white dark:bg-zinc-900 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                      <div>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{service.name}</p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 whitespace-nowrap">{service.startDate} to {service.endDate}</p>
+                      </div>
+                      <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 pl-4">
+                        ${service.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-5 mb-6 bg-white dark:bg-zinc-900 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl text-center">
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">No active or currently valid services available to bill right now.</p>
+                </div>
+              )}
+              
+              <div className="flex justify-between items-center p-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Total Payable Amount</span>
+                <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                  ${payableTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+            <div className="p-6 border-t border-zinc-100 dark:border-zinc-800/50 flex justify-end gap-3 bg-white dark:bg-zinc-900">
+              <button 
+                type="button"
+                onClick={() => setIsRecordPaymentOpen(false)}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                className="px-6 py-2 rounded-xl text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={validServices.length === 0}
+                onClick={() => {
+                  alert('Payment integration is ready to proceed!');
+                  setIsRecordPaymentOpen(false);
+                }}
+              >
+                Proceed to Pay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

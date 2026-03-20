@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import StatusToggle from "@/components/StatusToggle";
-import BillingTable from "@/components/BillingTable";
-import ServicesTable from "@/components/ServicesTable";
+import ClientFinancials from "@/components/ClientFinancials";
 
 // Extended mock data
 const mockClients = [
@@ -96,9 +95,7 @@ export default async function ClientProfile({
             </div>
           </div>
 
-          <ServicesTable initialServices={client.services || []} />
-
-          <BillingTable />
+          <ClientFinancials initialServices={client.services || []} />
         </div>
       </div>
     </div>
