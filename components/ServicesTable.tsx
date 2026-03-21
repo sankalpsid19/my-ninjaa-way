@@ -22,6 +22,7 @@ export default function ServicesTable({
   // Modals state
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [serviceToRemove, setServiceToRemove] = useState<Service | null>(null);
+  const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
 
   // Form state
   const getToday = () => new Date().toISOString().split('T')[0];
@@ -35,8 +36,28 @@ export default function ServicesTable({
   const [newStartDate, setNewStartDate] = useState(getToday());
   const [newEndDate, setNewEndDate] = useState(getNextYear());
   const [newPrice, setNewPrice] = useState("");
+  
+  const [editPrice, setEditPrice] = useState("");
 
   const totalAmount = services.filter(s => s.status === 'Active').reduce((sum, service) => sum + service.price, 0);
+
+  const openEditModal = (service: Service) => {
+    setServiceToEdit(service);
+    setEditPrice(service.price.toString());
+  };
+
+  const handleEditService = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!serviceToEdit || editPrice === "") return;
+    
+    setServices(services.map(s => {
+      if (s.id === serviceToEdit.id) {
+        return { ...s, price: parseFloat(editPrice) };
+      }
+      return s;
+    }));
+    setServiceToEdit(null);
+  };
 
   const handleToggleStatus = (id: string) => {
     setServices(services.map(s => {
@@ -90,7 +111,8 @@ export default function ServicesTable({
 
       {services.length > 0 ? (
         <>
-          <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm mb-3 bg-white dark:bg-zinc-900">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm mb-3 bg-white dark:bg-zinc-900">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800 text-xs uppercase text-zinc-500 dark:text-zinc-400 font-medium">
@@ -133,22 +155,91 @@ export default function ServicesTable({
                       </div>
                     </td>
                     <td className="py-2.5 px-4 text-right">
-                      <button 
-                        onClick={() => setServiceToRemove(service)}
-                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors p-1"
-                        title="Remove Service"
-                      >
-                        <span className="sr-only">Remove</span>
-                        <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button 
+                          onClick={() => openEditModal(service)}
+                          className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1"
+                          title="Edit Price"
+                        >
+                          <span className="sr-only">Edit Price</span>
+                          <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+                        <button 
+                          onClick={() => setServiceToRemove(service)}
+                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors p-1"
+                          title="Remove Service"
+                        >
+                          <span className="sr-only">Remove</span>
+                          <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end pr-2 py-1">
-            <div className="flex items-center gap-4 border-t-0 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm min-w-[300px] justify-between">
+
+          {/* Mobile Card List */}
+          <div className="md:hidden space-y-3 mb-3">
+            {services.map((service) => (
+              <div key={service.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm p-4">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 leading-tight">{service.name}</h3>
+                  <span className={`inline-flex items-center shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    service.status === 'Active' 
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400' 
+                      : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                  }`}>
+                    {service.status}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 mb-3">
+                  <span>{service.startDate} → {service.endDate}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-bold text-zinc-900 dark:text-white">
+                    ${service.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => handleToggleStatus(service.id)}
+                      className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${service.status === 'Active' ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                      title={`Click to mark as ${service.status === 'Active' ? 'Inactive' : 'Active'}`}
+                    >
+                      <span className="sr-only">Toggle status</span>
+                      <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${service.status === 'Active' ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </button>
+                    <button 
+                      onClick={() => openEditModal(service)}
+                      className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1"
+                      title="Edit Price"
+                    >
+                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button 
+                      onClick={() => setServiceToRemove(service)}
+                      className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors p-1"
+                      title="Remove Service"
+                    >
+                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end pr-0 sm:pr-2 py-1">
+            <div className="flex items-center gap-4 border-t-0 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm w-full sm:w-auto sm:min-w-[300px] justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Total Amount</span>
               <span className="text-xl font-bold text-zinc-900 dark:text-white">
                 ${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -157,7 +248,7 @@ export default function ServicesTable({
           </div>
         </>
       ) : (
-        <div className="p-8 bg-white dark:bg-zinc-900 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-center">
+        <div className="p-6 sm:p-8 bg-white dark:bg-zinc-900 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-center">
           <p className="text-sm text-zinc-500 dark:text-zinc-400">No active services. Add one to get started.</p>
         </div>
       )}
@@ -258,6 +349,47 @@ export default function ServicesTable({
                 Remove
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Form Modal */}
+      {serviceToEdit && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity">
+          <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6 transform transition-all scale-100">
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Edit Service Price</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+              Update the active price for <strong>{serviceToEdit.name}</strong>.
+            </p>
+            <form onSubmit={handleEditService} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">New Price ($)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  min="0"
+                  value={editPrice} 
+                  onChange={(e) => setEditPrice(e.target.value)} 
+                  className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setServiceToEdit(null)}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-zinc-900"
+                >
+                  Save Updates
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

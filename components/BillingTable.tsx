@@ -57,7 +57,8 @@ export default function BillingTable({ clientServices = [] }: { clientServices?:
         </button>
       </div>
       
-      <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm mb-4">
+      {/* Desktop Table */}
+      <div className="hidden sm:block overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm mb-4">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-xs uppercase text-zinc-500 dark:text-zinc-400 font-medium">
@@ -94,6 +95,33 @@ export default function BillingTable({ clientServices = [] }: { clientServices?:
         </table>
       </div>
 
+      {/* Mobile Card List */}
+      <div className="sm:hidden space-y-3 mb-4">
+        {currentRecords.map((bill) => (
+          <div key={bill.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm p-4">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{bill.month}</span>
+              <span className={`inline-flex items-center shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                bill.status === 'Paid' 
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                  : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-500/90'
+              }`}>
+                {bill.status}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-base font-bold text-zinc-900 dark:text-white">{bill.amount}</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{bill.datePaid !== '-' ? `Paid ${bill.datePaid}` : 'Unpaid'}</p>
+              </div>
+              <a href={bill.invoiceUri} className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">
+                Receipt
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Pagination Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -109,7 +137,7 @@ export default function BillingTable({ clientServices = [] }: { clientServices?:
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           
-          <div className="flex gap-1 hidden sm:flex">
+          <div className="hidden sm:flex gap-1">
             {Array.from({ length: totalPages }).map((_, idx) => (
               <button
                 key={idx}

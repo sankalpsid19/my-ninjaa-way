@@ -37,17 +37,17 @@ export default async function ClientProfile({
         </div>
 
         <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-          <div className="p-5 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="p-4 sm:p-5 border-b border-zinc-200 dark:border-zinc-800">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">{client.name}</h1>
-                <p className="text-zinc-500 dark:text-zinc-400 mt-1">{client.company}</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white">{client.name}</h1>
+                <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400 mt-1">{client.company}</p>
               </div>
               <StatusToggle initialStatus={client.status} />
             </div>
           </div>
 
-          <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/50">
+          <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/50">
             <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-3">Contact Information</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -68,9 +68,9 @@ export default async function ClientProfile({
               </div>
               <div>
                 <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">Company Website</p>
-                <p className="text-zinc-900 dark:text-zinc-100">
+                <p className="text-zinc-900 dark:text-zinc-100 break-all">
                   {client.website ? (
-                    <a href={client.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                    <a href={client.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm sm:text-base">
                       {client.website}
                     </a>
                   ) : (
@@ -81,7 +81,7 @@ export default async function ClientProfile({
             </div>
           </div>
 
-          <div className="p-5 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800/50">
+          <div className="p-4 sm:p-5 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800/50">
             <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-3">Point of Contact (POC)</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>

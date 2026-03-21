@@ -27,11 +27,13 @@ export default function ClientsPage() {
         </div>
 
         <div className="w-full bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Clients</h2>
+          <div className="p-4 sm:p-6 border-b border-zinc-200 dark:border-zinc-800">
+            <h2 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Clients</h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Manage and view your clients details.</p>
           </div>
-          <div className="overflow-x-auto">
+
+          {/* Desktop Table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-xs uppercase text-zinc-500 dark:text-zinc-400 font-medium">
@@ -64,6 +66,29 @@ export default function ClientsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card List */}
+          <div className="sm:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
+            {mockClients.map((client) => (
+              <div
+                key={client.id}
+                onClick={() => router.push(`/clients/${client.id}`)}
+                className="cursor-pointer p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors active:bg-zinc-100 dark:active:bg-zinc-800"
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{client.name}</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    client.status === 'Active' 
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                      : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400'
+                  }`}>
+                    {client.status}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{client.email}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
