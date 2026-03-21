@@ -95,7 +95,15 @@ export default async function ClientProfile({
             </div>
           </div>
 
-          <ClientFinancials initialServices={client.services || []} />
+          <ClientFinancials 
+            initialServices={client.services || []} 
+            clientInfo={{
+              name: client.clientName || client.name,
+              company: client.company,
+              email: client.email,
+              phone: client.phone,
+            }}
+          />
         </div>
       </div>
     </div>

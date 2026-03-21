@@ -2,6 +2,16 @@
 
 import { useState } from "react";
 import { Service } from "./ServicesTable";
+import ReceiptPreview, { ClientInfo } from "./ReceiptPreview";
+
+type Bill = {
+  id: string;
+  month: string;
+  amount: string;
+  status: string;
+  datePaid: string;
+  invoiceUri: string;
+};
 
 // Generate 14 mock bills for pagination demonstration
 const mockBills = Array.from({ length: 14 }).map((_, i) => {
@@ -16,9 +26,10 @@ const mockBills = Array.from({ length: 14 }).map((_, i) => {
   };
 });
 
-export default function BillingTable({ clientServices = [] }: { clientServices?: Service[] }) {
+export default function BillingTable({ clientServices = [], clientInfo }: { clientServices?: Service[]; clientInfo: ClientInfo }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
+  const [receiptBill, setReceiptBill] = useState<Bill | null>(null);
   const recordsPerPage = 5;
 
   const indexOfLastRecord = currentPage * recordsPerPage;
@@ -85,9 +96,12 @@ export default function BillingTable({ clientServices = [] }: { clientServices?:
                 </td>
                 <td className="py-2.5 px-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{bill.datePaid}</td>
                 <td className="py-2.5 px-4 text-sm text-right whitespace-nowrap">
-                  <a href={bill.invoiceUri} className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setReceiptBill(bill); }}
+                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+                  >
                     Receipt
-                  </a>
+                  </button>
                 </td>
               </tr>
             ))}
@@ -114,9 +128,12 @@ export default function BillingTable({ clientServices = [] }: { clientServices?:
                 <p className="text-base font-bold text-zinc-900 dark:text-white">{bill.amount}</p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{bill.datePaid !== '-' ? `Paid ${bill.datePaid}` : 'Unpaid'}</p>
               </div>
-              <a href={bill.invoiceUri} className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setReceiptBill(bill); }}
+                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+              >
                 Receipt
-              </a>
+              </button>
             </div>
           </div>
         ))}
@@ -232,6 +249,16 @@ export default function BillingTable({ clientServices = [] }: { clientServices?:
             </div>
           </div>
         </div>
+      )}
+
+      {/* Receipt Preview Modal */}
+      {receiptBill && (
+        <ReceiptPreview
+          bill={receiptBill}
+          clientInfo={clientInfo}
+          services={clientServices || []}
+          onClose={() => setReceiptBill(null)}
+        />
       )}
     </div>
   );

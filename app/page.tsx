@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Home() {
   const modules = [
     { title: "Clients", href: "/clients", description: "Manage and view client details", icon: "👥" },
-    { title: "Karunam", href: "/karunam", description: "Karunam portal management", icon: "🏢" }
+    { title: "Karunam", href: "https://karunam.vercel.app/", description: "Karunam portal management", icon: "🏢", external: true }
   ];
 
   return (
@@ -17,6 +17,7 @@ export default function Home() {
             <Link 
               key={mod.title} 
               href={mod.href}
+              {...('external' in mod && mod.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               className="group flex flex-col p-8 bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 hover:shadow-lg hover:-translate-y-1 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-300"
             >
               <div className="text-4xl mb-6 opacity-80 group-hover:opacity-100 group-hover:scale-110 transform transition-all transform-origin-left">
