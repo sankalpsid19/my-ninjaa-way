@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function StatusToggle({ initialStatus }: { initialStatus: string }) {
+export default function StatusToggle({ initialStatus, onStatusChange }: { initialStatus: string; onStatusChange?: (newStatus: string) => void }) {
   const [status, setStatus] = useState(initialStatus);
   const [showConfirm, setShowConfirm] = useState(false);
   
@@ -13,7 +13,9 @@ export default function StatusToggle({ initialStatus }: { initialStatus: string 
   };
 
   const confirmToggle = () => {
-    setStatus(isActive ? "Inactive" : "Active");
+    const newStatus = isActive ? "Inactive" : "Active";
+    setStatus(newStatus);
+    onStatusChange?.(newStatus);
     setShowConfirm(false);
   };
 
