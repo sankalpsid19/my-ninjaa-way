@@ -3,7 +3,6 @@ import Link from "next/link";
 export default function Home() {
   const modules = [
     { title: "Clients", href: "/clients", description: "Manage and view client details", icon: "👥" },
-    { title: "Karunam", href: "https://karunam.vercel.app/", description: "Karunam portal management", icon: "🏢", external: true }
   ];
 
   return (

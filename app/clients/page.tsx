@@ -48,7 +48,7 @@ export default async function ClientsPage(props: {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {clients.map((client) => (
+                {clients.map((client: any) => (
                   <tr
                     key={client.id}
                     className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group"
@@ -82,7 +82,7 @@ export default async function ClientsPage(props: {
 
           {/* Mobile Card List */}
           <div className="sm:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
-            {clients.map((client) => (
+            {clients.map((client: any) => (
               <Link
                 href={`/clients/${client.id}`}
                 key={client.id}
