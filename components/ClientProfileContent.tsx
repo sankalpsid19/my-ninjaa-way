@@ -7,28 +7,29 @@ import { ClientInfo } from "./ReceiptPreview";
 import { Service } from "./ServicesTable";
 
 type ClientData = {
+  id: string;
   name: string;
-  clientName: string;
   company: string;
   email: string;
   phone: string;
-  website: string;
+  website: string | null;
   joinDate: string;
-  pocName: string;
-  pocEmail: string;
+  pocName: string | null;
+  pocEmail: string | null;
   status: string;
   services: Service[];
+  bills: any[]; // We'll handle this more specifically if needed
 };
 
 export default function ClientProfileContent({ client }: { client: ClientData }) {
   const [status, setStatus] = useState(client.status);
 
-  // Current month's bill is "Pending" (mock: first bill is always pending)
-  const isCurrentMonthUnpaid = true;
+  // Current month's bill is "Pending" if there's any bill with status "Pending" in the related bills
+  const isCurrentMonthUnpaid = client.bills?.some(bill => bill.status === "Pending") || false;
   const showWarning = status === "Active" && isCurrentMonthUnpaid;
 
   const clientInfo: ClientInfo = {
-    name: client.clientName || client.name,
+    name: client.name,
     company: client.company,
     email: client.email,
     phone: client.phone,
@@ -75,7 +76,7 @@ export default function ClientProfileContent({ client }: { client: ClientData })
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">Client Name</p>
-            <p className="text-zinc-900 dark:text-zinc-100">{client.clientName || 'N/A'}</p>
+            <p className="text-zinc-900 dark:text-zinc-100">{client.name}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">Email Address</p>
@@ -121,7 +122,9 @@ export default function ClientProfileContent({ client }: { client: ClientData })
 
       {/* Financials */}
       <ClientFinancials 
+        clientId={client.id}
         initialServices={client.services || []} 
+        initialBills={client.bills || []}
         clientInfo={clientInfo}
       />
     </div>

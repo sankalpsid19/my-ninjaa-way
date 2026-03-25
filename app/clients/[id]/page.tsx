@@ -1,15 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ClientProfileContent from "@/components/ClientProfileContent";
-
-// Extended mock data
-const mockClients = [
-  { id: "1", name: "Infinity Realtors", email: "alice@example.com", status: "Active", phone: "+1 234 567 8900", company: "Infinity Realtors", website: "https://infinity-realtors.vercel.app/", joinDate: "Jan 12, 2025", pocName: "Sharmistha Dey", pocEmail: "sharmisthamayur@gmail.com", clientName: "Alison Johnson", services: [{ id: "s1", name: "Web Application Development", startDate: "2026-01-15", endDate: "2027-01-14", price: 5000, status: "Active" }, { id: "s2", name: "SEO Optimization", startDate: "2026-03-01", endDate: "2026-08-31", price: 1200, status: "Active" }, { id: "s3", name: "Platform Maintenance", startDate: "2026-03-01", endDate: "2026-03-31", price: 300, status: "Active" }] },
-  { id: "2", name: "Bob Smith", email: "bob@example.com", status: "Inactive", phone: "+1 987 654 3210", company: "Global Corp", website: "", joinDate: "Sep 05, 2024", pocName: "John Doe", pocEmail: "john@globalcorp.com", clientName: "Bob Smith", services: [{ id: "s4", name: "Cloud Hosting", startDate: "2025-09-01", endDate: "2026-08-31", price: 2400, status: "Inactive" }] },
-  { id: "3", name: "Charlie Davis", email: "charlie@example.com", status: "Active", phone: "+1 555 123 4567", company: "StartUp Inc", website: "", joinDate: "Mar 22, 2026", pocName: "Sarah Connor", pocEmail: "sarah@startup.inc", clientName: "Charlie Davis", services: [{ id: "s5", name: "Mobile App Development", startDate: "2026-04-01", endDate: "2026-10-31", price: 8500, status: "Active" }] },
-  { id: "4", name: "Diana Prince", email: "diana@example.com", status: "Active", phone: "+1 800 123 4567", company: "Wonder Corp", website: "", joinDate: "Dec 10, 2025", pocName: "Steve Trevor", pocEmail: "steve@wonder.corp", clientName: "Diana Prince", services: [{ id: "s6", name: "Cybersecurity Audit", startDate: "2026-02-15", endDate: "2026-03-15", price: 3500, status: "Active" }] },
-  { id: "5", name: "Evan Wright", email: "evan@example.com", status: "Inactive", phone: "+1 555 987 6543", company: "Wright Enterprises", website: "", joinDate: "Jun 15, 2023", pocName: "Oliver Queen", pocEmail: "oliver@wright.ent", clientName: "Evan Wright", services: [{ id: "s7", name: "IT Consulting", startDate: "2023-06-15", endDate: "2024-06-14", price: 5000, status: "Inactive" }] },
-];
+import { getClientById } from "@/lib/actions/client-actions";
 
 export default async function ClientProfile({
   params,
@@ -17,7 +9,7 @@ export default async function ClientProfile({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const client = mockClients.find((c) => c.id === id);
+  const client = await getClientById(id);
 
   if (!client) {
     notFound();

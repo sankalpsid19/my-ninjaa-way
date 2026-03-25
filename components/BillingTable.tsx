@@ -3,39 +3,39 @@
 import { useState } from "react";
 import { Service } from "./ServicesTable";
 import ReceiptPreview, { ClientInfo } from "./ReceiptPreview";
+import { recordPayment } from "@/lib/actions/client-actions";
 
 type Bill = {
   id: string;
   month: string;
-  amount: string;
+  amount: number;
   status: string;
   datePaid: string;
   invoiceUri: string;
 };
 
-// Generate 14 mock bills for pagination demonstration
-const mockBills = Array.from({ length: 14 }).map((_, i) => {
-  const date = new Date(2026, 2 - i, 1);
-  return {
-    id: `b${i + 1}`,
-    month: date.toLocaleString('default', { month: 'long', year: 'numeric' }),
-    amount: `$${(Math.random() * 500 + 500).toFixed(2)}`,
-    status: i === 0 ? "Pending" : "Paid",
-    datePaid: i === 0 ? "-" : new Date(2026, 2 - i, Math.floor(Math.random() * 10) + 1).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-    invoiceUri: "#"
-  };
-});
-
-export default function BillingTable({ clientServices = [], clientInfo }: { clientServices?: Service[]; clientInfo: ClientInfo }) {
+export default function BillingTable({ 
+  clientServices = [], 
+  clientInfo,
+  bills = [],
+  clientId
+}: { 
+  clientServices?: Service[]; 
+  clientInfo: ClientInfo;
+  bills?: Bill[];
+  clientId: string;
+}) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
-  const [receiptBill, setReceiptBill] = useState<Bill | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [receiptBill, setReceiptBill] = useState<any | null>(null);
+  
   const recordsPerPage = 5;
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = mockBills.slice(indexOfFirstRecord, indexOfLastRecord);
-  const totalPages = Math.ceil(mockBills.length / recordsPerPage);
+  const currentRecords = bills.slice(indexOfFirstRecord, indexOfLastRecord);
+  const totalPages = Math.ceil(bills.length / recordsPerPage);
 
   const nextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -55,6 +55,27 @@ export default function BillingTable({ clientServices = [], clientInfo }: { clie
   });
 
   const payableTotal = validServices.reduce((sum, s) => sum + s.price, 0);
+
+  const handleRecordPayment = async () => {
+    if (payableTotal === 0 || !clientId) return;
+    
+    setIsSubmitting(true);
+    try {
+      const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+      const result = await recordPayment(clientId, payableTotal, currentMonth);
+      
+      if (result.success) {
+        setIsRecordPaymentOpen(false);
+      } else {
+        alert(result.error);
+      }
+    } catch (error) {
+      console.error("Failed to record payment:", error);
+      alert("Something went wrong while recording payment.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="p-5">
@@ -84,7 +105,9 @@ export default function BillingTable({ clientServices = [], clientInfo }: { clie
             {currentRecords.map((bill) => (
               <tr key={bill.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors group">
                 <td className="py-2.5 px-4 text-sm font-medium text-zinc-900 dark:text-zinc-100 whitespace-nowrap">{bill.month}</td>
-                <td className="py-2.5 px-4 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">{bill.amount}</td>
+                <td className="py-2.5 px-4 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                  ${bill.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </td>
                 <td className="py-2.5 px-4 text-sm whitespace-nowrap">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     bill.status === 'Paid' 
@@ -105,6 +128,13 @@ export default function BillingTable({ clientServices = [], clientInfo }: { clie
                 </td>
               </tr>
             ))}
+            {currentRecords.length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                  No billing records found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -125,7 +155,9 @@ export default function BillingTable({ clientServices = [], clientInfo }: { clie
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-base font-bold text-zinc-900 dark:text-white">{bill.amount}</p>
+                <p className="text-base font-bold text-zinc-900 dark:text-white">
+                  ${bill.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{bill.datePaid !== '-' ? `Paid ${bill.datePaid}` : 'Unpaid'}</p>
               </div>
               <button 
@@ -137,12 +169,17 @@ export default function BillingTable({ clientServices = [], clientInfo }: { clie
             </div>
           </div>
         ))}
+        {currentRecords.length === 0 && (
+          <div className="p-8 text-center text-sm text-zinc-500 dark:text-zinc-400 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg">
+            No billing records found.
+          </div>
+        )}
       </div>
 
       {/* Pagination Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Showing <span className="font-medium text-zinc-900 dark:text-zinc-100">{indexOfFirstRecord + 1}</span> to <span className="font-medium text-zinc-900 dark:text-zinc-100">{Math.min(indexOfLastRecord, mockBills.length)}</span> of <span className="font-medium text-zinc-900 dark:text-zinc-100">{mockBills.length}</span> records
+          Showing <span className="font-medium text-zinc-900 dark:text-zinc-100">{indexOfFirstRecord + 1}</span> to <span className="font-medium text-zinc-900 dark:text-zinc-100">{Math.min(indexOfLastRecord, bills.length)}</span> of <span className="font-medium text-zinc-900 dark:text-zinc-100">{bills.length}</span> records
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -237,14 +274,21 @@ export default function BillingTable({ clientServices = [], clientInfo }: { clie
               </button>
               <button 
                 type="button"
-                className="px-6 py-2 rounded-xl text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={validServices.length === 0}
-                onClick={() => {
-                  alert('Payment integration is ready to proceed!');
-                  setIsRecordPaymentOpen(false);
-                }}
+                className="px-6 py-2 rounded-xl text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                disabled={validServices.length === 0 || isSubmitting}
+                onClick={handleRecordPayment}
               >
-                Proceed to Pay
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white dark:text-zinc-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  "Proceed to Pay"
+                )}
               </button>
             </div>
           </div>

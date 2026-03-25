@@ -1,18 +1,8 @@
-"use client";
-
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { getClients } from "@/lib/actions/client-actions";
 
-const mockClients = [
-  { id: "1", name: "Infinity Realtors", email: "alice@example.com", status: "Active" },
-  { id: "2", name: "Bob Smith", email: "bob@example.com", status: "Inactive" },
-  { id: "3", name: "Charlie Davis", email: "charlie@example.com", status: "Active" },
-  { id: "4", name: "Diana Prince", email: "diana@example.com", status: "Active" },
-  { id: "5", name: "Evan Wright", email: "evan@example.com", status: "Inactive" },
-];
-
-export default function ClientsPage() {
-  const router = useRouter();
+export default async function ClientsPage() {
+  const clients = await getClients();
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black font-sans py-12 px-4 sm:px-6 lg:px-8">
@@ -43,24 +33,31 @@ export default function ClientsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {mockClients.map((client) => (
+                {clients.map((client) => (
                   <tr
                     key={client.id}
-                    onClick={() => router.push(`/clients/${client.id}`)}
-                    className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group"
+                    className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group"
                   >
                     <td className="py-4 px-6 text-sm font-medium text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {client.name}
+                      <Link href={`/clients/${client.id}`} className="block w-full h-full">
+                        {client.name}
+                      </Link>
                     </td>
-                    <td className="py-4 px-6 text-sm text-zinc-500 dark:text-zinc-400">{client.email}</td>
+                    <td className="py-4 px-6 text-sm text-zinc-500 dark:text-zinc-400">
+                      <Link href={`/clients/${client.id}`} className="block w-full h-full">
+                        {client.email}
+                      </Link>
+                    </td>
                     <td className="py-4 px-6 text-sm">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        client.status === 'Active' 
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' 
-                          : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400'
-                      }`}>
-                        {client.status}
-                      </span>
+                      <Link href={`/clients/${client.id}`} className="block w-full h-full">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          client.status === 'Active' 
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                            : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400'
+                        }`}>
+                          {client.status}
+                        </span>
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -70,11 +67,11 @@ export default function ClientsPage() {
 
           {/* Mobile Card List */}
           <div className="sm:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
-            {mockClients.map((client) => (
-              <div
+            {clients.map((client) => (
+              <Link
+                href={`/clients/${client.id}`}
                 key={client.id}
-                onClick={() => router.push(`/clients/${client.id}`)}
-                className="cursor-pointer p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors active:bg-zinc-100 dark:active:bg-zinc-800"
+                className="block p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors active:bg-zinc-100 dark:active:bg-zinc-800"
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{client.name}</span>
@@ -87,7 +84,7 @@ export default function ClientsPage() {
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{client.email}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

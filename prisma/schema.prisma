@@ -5,22 +5,52 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  // Connection URL moved to prisma.config.ts
 }
 
-model User {
-  id        String   @id 
-  email     String   @unique
-  isSubscribed Boolean  @default(false)
-  subscriptionEnds DateTime?
-  name      String?
-  posts     Post[]
+model Client {
+  id        String    @id @default(uuid())
+  name      String
+  company   String
+  email     String    @unique
+  phone     String
+  website   String?
+  joinDate  String
+  status    String    @default("Active")
+  pocName   String?
+  pocEmail  String?
+  services  Service[]
+  bills     Bill[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Service {
+  id        String   @id @default(uuid())
+  name      String
+  startDate String
+  endDate   String
+  price     Float
+  status    String   @default("Active")
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Bill {
+  id         String   @id @default(uuid())
+  month      String
+  amount     Float
+  status     String   @default("Paid")
+  datePaid   String
+  invoiceUri String   @default("#")
+  clientId   String
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
