@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { getClients } from "@/lib/actions/client-actions";
+import AddClientButton from "@/components/AddClientButton";
+import ClientSearch from "@/components/ClientSearch";
 
-export default async function ClientsPage() {
-  const clients = await getClients();
+export default async function ClientsPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const query = typeof searchParams?.q === 'string' ? searchParams.q : undefined;
+  
+  const clients = await getClients(query);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black font-sans py-12 px-4 sm:px-6 lg:px-8">
@@ -17,9 +24,17 @@ export default async function ClientsPage() {
         </div>
 
         <div className="w-full bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-          <div className="p-4 sm:p-6 border-b border-zinc-200 dark:border-zinc-800">
-            <h2 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Clients</h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Manage and view your clients details.</p>
+          <div className="p-4 sm:p-6 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Clients</h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Manage and view your clients details.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+              <ClientSearch />
+              <div className="w-full sm:w-auto">
+                <AddClientButton />
+              </div>
+            </div>
           </div>
 
           {/* Desktop Table */}

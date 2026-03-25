@@ -3,9 +3,16 @@
 import { prisma } from "../prisma";
 import { revalidatePath } from "next/cache";
 
-export async function getClients() {
+export async function getClients(query?: string) {
   try {
     const clients = await prisma.client.findMany({
+      where: query ? {
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+          { company: { contains: query, mode: "insensitive" } },
+        ],
+      } : undefined,
       orderBy: { createdAt: "desc" },
     });
     return clients;
@@ -92,5 +99,42 @@ export async function recordPayment(clientId: string, amount: number, month: str
   } catch (error) {
     console.error(`Error recording payment for client ${clientId}:`, error);
     return { success: false, error: "Failed to record payment" };
+  }
+}
+
+export async function createClient(data: {
+  name: string;
+  company: string;
+  email: string;
+  phone: string;
+  website?: string;
+  pocName?: string;
+  pocEmail?: string;
+}) {
+  try {
+    const joinDate = new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    
+    // Check if client with email already exists
+    const existingClient = await prisma.client.findUnique({
+      where: { email: data.email },
+    });
+    
+    if (existingClient) {
+      return { success: false, error: "A client with this email already exists." };
+    }
+
+    const client = await prisma.client.create({
+      data: {
+        ...data,
+        joinDate,
+        status: "Active",
+      },
+    });
+
+    revalidatePath("/clients");
+    return { success: true, client };
+  } catch (error) {
+    console.error("Error creating client:", error);
+    return { success: false, error: "Failed to create client." };
   }
 }
