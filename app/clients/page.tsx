@@ -48,15 +48,27 @@ export default async function ClientsPage(props: {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {clients.map((client: any) => (
+                {clients.map((client: any) => {
+                  const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+                  const hasPaidCurrentMonth = client.bills?.some((b: any) => b.month === currentMonth && b.status === "Paid");
+                  const needsWarning = client.status === 'Active' && !hasPaidCurrentMonth;
+
+                  return (
                   <tr
                     key={client.id}
                     className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group"
                   >
                     <td className="py-4 px-6 text-sm font-medium text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      <Link href={`/clients/${client.id}`} className="block w-full h-full">
-                        {client.name}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/clients/${client.id}`} className="block h-full">
+                          {client.name}
+                        </Link>
+                        {needsWarning && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100/80 text-red-700 dark:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-500/30" title="Active but unpaid for current month. Action Required.">
+                            ⚠️ Unpaid
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-6 text-sm text-zinc-500 dark:text-zinc-400">
                       <Link href={`/clients/${client.id}`} className="block w-full h-full">
@@ -75,21 +87,33 @@ export default async function ClientsPage(props: {
                       </Link>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
 
           {/* Mobile Card List */}
           <div className="sm:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
-            {clients.map((client: any) => (
+            {clients.map((client: any) => {
+              const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+              const hasPaidCurrentMonth = client.bills?.some((b: any) => b.month === currentMonth && b.status === "Paid");
+              const needsWarning = client.status === 'Active' && !hasPaidCurrentMonth;
+
+              return (
               <Link
                 href={`/clients/${client.id}`}
                 key={client.id}
                 className="block p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors active:bg-zinc-100 dark:active:bg-zinc-800"
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{client.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{client.name}</span>
+                    {needsWarning && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100/80 text-red-700 dark:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-500/30">
+                        ⚠️ Unpaid
+                      </span>
+                    )}
+                  </div>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     client.status === 'Active' 
                       ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' 
@@ -100,7 +124,7 @@ export default async function ClientsPage(props: {
                 </div>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{client.email}</p>
               </Link>
-            ))}
+            )})}
           </div>
         </div>
       </div>

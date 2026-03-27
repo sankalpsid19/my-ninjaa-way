@@ -13,6 +13,9 @@ export async function getClients(query?: string) {
           { company: { contains: query, mode: "insensitive" } },
         ],
       } : undefined,
+      include: {
+        bills: true,
+      },
       orderBy: { createdAt: "desc" },
     });
     return clients;
@@ -94,7 +97,14 @@ export async function recordPayment(clientId: string, amount: number, month: str
       });
     }
 
+    // Auto-activate the website
+    await prisma.client.update({
+      where: { id: clientId },
+      data: { status: "Active" }
+    });
+
     revalidatePath(`/clients/${clientId}`);
+    revalidatePath("/clients");
     return { success: true, bill };
   } catch (error) {
     console.error(`Error recording payment for client ${clientId}:`, error);

@@ -32,19 +32,6 @@ export default function BillingTable({
   
   const recordsPerPage = 5;
 
-  const indexOfLastRecord = currentPage * recordsPerPage;
-  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = bills.slice(indexOfFirstRecord, indexOfLastRecord);
-  const totalPages = Math.ceil(bills.length / recordsPerPage);
-
-  const nextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
-
-  const prevPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
-  };
-
   const validServices = clientServices.filter(s => {
     if (s.status !== 'Active') return false;
     const today = new Date().toISOString().split('T')[0];
@@ -55,6 +42,35 @@ export default function BillingTable({
   });
 
   const payableTotal = validServices.reduce((sum, s) => sum + s.price, 0);
+
+  const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+  const hasPaidCurrentMonth = bills.some(b => b.month === currentMonth && b.status === "Paid");
+  const hasPendingCurrentMonth = bills.some(b => b.month === currentMonth && b.status === "Pending");
+
+  const displayBills = [...bills];
+  if (!hasPaidCurrentMonth && !hasPendingCurrentMonth && validServices.length > 0) {
+    displayBills.unshift({
+      id: "virtual-pending",
+      month: currentMonth,
+      amount: payableTotal,
+      status: "Pending",
+      datePaid: "-",
+      invoiceUri: "#"
+    });
+  }
+
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = displayBills.slice(indexOfFirstRecord, indexOfLastRecord);
+  const totalPages = Math.ceil(displayBills.length / recordsPerPage);
+
+  const nextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const prevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
 
   const handleRecordPayment = async () => {
     if (payableTotal === 0 || !clientId) return;
@@ -83,9 +99,10 @@ export default function BillingTable({
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Billing & Payments</h2>
         <button 
           onClick={() => setIsRecordPaymentOpen(true)}
-          className="text-sm px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium text-center"
+          disabled={hasPaidCurrentMonth || validServices.length === 0}
+          className="text-sm px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium text-center disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Record Payment
+          {hasPaidCurrentMonth ? "Paid for Current Month" : "Record Payment"}
         </button>
       </div>
       
@@ -179,7 +196,7 @@ export default function BillingTable({
       {/* Pagination Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Showing <span className="font-medium text-zinc-900 dark:text-zinc-100">{indexOfFirstRecord + 1}</span> to <span className="font-medium text-zinc-900 dark:text-zinc-100">{Math.min(indexOfLastRecord, bills.length)}</span> of <span className="font-medium text-zinc-900 dark:text-zinc-100">{bills.length}</span> records
+          Showing <span className="font-medium text-zinc-900 dark:text-zinc-100">{indexOfFirstRecord + 1}</span> to <span className="font-medium text-zinc-900 dark:text-zinc-100">{Math.min(indexOfLastRecord, displayBills.length)}</span> of <span className="font-medium text-zinc-900 dark:text-zinc-100">{displayBills.length}</span> records
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -275,7 +292,7 @@ export default function BillingTable({
               <button 
                 type="button"
                 className="px-6 py-2 rounded-xl text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                disabled={validServices.length === 0 || isSubmitting}
+                disabled={validServices.length === 0 || isSubmitting || hasPaidCurrentMonth}
                 onClick={handleRecordPayment}
               >
                 {isSubmitting ? (
@@ -287,7 +304,7 @@ export default function BillingTable({
                     Processing...
                   </>
                 ) : (
-                  "Proceed to Pay"
+                  hasPaidCurrentMonth ? "Paid" : "Proceed to Pay"
                 )}
               </button>
             </div>

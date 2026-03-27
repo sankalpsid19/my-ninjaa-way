@@ -24,9 +24,9 @@ type ClientData = {
 export default function ClientProfileContent({ client }: { client: ClientData }) {
   const [status, setStatus] = useState(client.status);
 
-  // Current month's bill is "Pending" if there's any bill with status "Pending" in the related bills
-  const isCurrentMonthUnpaid = client.bills?.some(bill => bill.status === "Pending") || false;
-  const showWarning = status === "Active" && isCurrentMonthUnpaid;
+  const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+  const hasPaidCurrentMonth = client.bills?.some(b => b.month === currentMonth && b.status === "Paid");
+  const showWarning = status === "Active" && !hasPaidCurrentMonth;
 
   const clientInfo: ClientInfo = {
     name: client.name,
