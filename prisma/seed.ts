@@ -92,6 +92,42 @@ async function main() {
     },
   ];
 
+  // Seed Admin User
+  const bcrypt = await import("bcryptjs");
+  const hashedPassword = await bcrypt.hash("admin123", 10);
+
+  const adminUser = await prisma.user.upsert({
+    where: { email: "sankalpyadav96@gmail.com" },
+    update: { role: "admin" },
+    create: {
+      name: "Sankalp Yadav",
+      email: "sankalpyadav96@gmail.com",
+      password: hashedPassword,
+      role: "admin",
+    },
+  });
+  console.log(`Admin user ready: ${adminUser.email}`);
+
+  // Seed Default Modules
+  const defaultModules = [
+    {
+      slug: "clients",
+      title: "Clients",
+      description: "Manage and view client details",
+      icon: "👥",
+      href: "/clients",
+    },
+  ];
+
+  for (const mod of defaultModules) {
+    await prisma.module.upsert({
+      where: { slug: mod.slug },
+      update: mod,
+      create: mod,
+    });
+    console.log(`Upserted module: ${mod.title}`);
+  }
+
   for (const clientData of mockClients) {
     const { services, bills, ...clientInfo } = clientData;
 
