@@ -1,9 +1,12 @@
 "use server";
 
+// Auth Actions for My Ninjaa Way
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { randomBytes } from "crypto";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 export async function registerUser(formData: {
   name: string;
@@ -268,6 +271,126 @@ export async function changePassword(currentPassword: string, newPassword: strin
   } catch (error) {
     console.error("Change password error:", error);
     return { success: false, error: "Failed to change password." };
+  }
+}
+
+export async function requestPasswordReset(emailInput: string) {
+  try {
+    const email = emailInput.trim().toLowerCase();
+
+    if (!email) {
+      return { success: false, error: "Email is required." };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    // To prevent email enumeration, return success even if user doesn't exist
+    if (!user) {
+      return {
+        success: true,
+        message: "If an account exists with that email, a password reset link has been sent.",
+      };
+    }
+
+    // Rate limiting: check if a token was requested for this email in the last 5 minutes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const recentToken = await prisma.passwordResetToken.findFirst({
+      where: {
+        email,
+        createdAt: {
+          gte: fiveMinutesAgo,
+        },
+      },
+    });
+
+    if (recentToken) {
+      return {
+        success: false,
+        error: "A password reset email was sent recently. Please check your inbox or wait 5 minutes before trying again.",
+      };
+    }
+
+    // Generate secure token & expiration (1 hour)
+    const token = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    // Save token to DB
+    await prisma.passwordResetToken.create({
+      data: {
+        email,
+        token,
+        expiresAt,
+      },
+    });
+
+    // Send email via Resend
+    await sendPasswordResetEmail(email, token);
+
+    return {
+      success: true,
+      message: "If an account exists with that email, a password reset link has been sent.",
+    };
+  } catch (error: any) {
+    console.error("Request password reset error:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to process password reset request. Please try again later.",
+    };
+  }
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  try {
+    if (!token) {
+      return { success: false, error: "Reset token is missing or invalid." };
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, error: "Password must be at least 6 characters." };
+    }
+
+    // Find valid token
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { token },
+    });
+
+    if (!resetToken) {
+      return { success: false, error: "Invalid or expired password reset link." };
+    }
+
+    if (resetToken.expiresAt < new Date()) {
+      // Cleanup expired token
+      await prisma.passwordResetToken.delete({ where: { token } }).catch(() => {});
+      return { success: false, error: "This password reset link has expired. Please request a new one." };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: resetToken.email },
+    });
+
+    if (!user) {
+      return { success: false, error: "User associated with this token no longer exists." };
+    }
+
+    // Hash new password and update user
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { email: resetToken.email },
+      data: { password: hashedPassword },
+    });
+
+    // Clean up all reset tokens for this email
+    await prisma.passwordResetToken.deleteMany({
+      where: { email: resetToken.email },
+    });
+
+    return { success: true, message: "Your password has been reset successfully." };
+  } catch (error: any) {
+    console.error("Reset password error:", error);
+    return { success: false, error: "Failed to reset password. Please try again." };
   }
 }
 
