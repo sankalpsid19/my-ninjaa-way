@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import StatusToggle from "./StatusToggle";
 import ClientFinancials from "./ClientFinancials";
 import { ClientInfo } from "./ReceiptPreview";
 import { Service } from "./ServicesTable";
+import DeleteClientModal from "./DeleteClientModal";
+import { deleteClient } from "@/lib/actions/client-actions";
 
 type ClientData = {
   id: string;
@@ -22,7 +25,9 @@ type ClientData = {
 };
 
 export default function ClientProfileContent({ client }: { client: ClientData }) {
+  const router = useRouter();
   const [status, setStatus] = useState(client.status);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
   const hasPaidCurrentMonth = client.bills?.some(b => b.month === currentMonth && b.status === "Paid");
@@ -33,6 +38,15 @@ export default function ClientProfileContent({ client }: { client: ClientData })
     company: client.company,
     email: client.email,
     phone: client.phone,
+  };
+
+  const handleDeleteClient = async () => {
+    const res = await deleteClient(client.id);
+    if (!res.success) {
+      throw new Error(res.error || "Failed to delete client.");
+    }
+    router.push("/clients");
+    router.refresh();
   };
 
   return (
@@ -66,7 +80,9 @@ export default function ClientProfileContent({ client }: { client: ClientData })
             <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white">{client.name}</h1>
             <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400 mt-1">{client.company}</p>
           </div>
-          <StatusToggle initialStatus={client.status} onStatusChange={setStatus} />
+          <div className="flex items-center gap-3">
+            <StatusToggle initialStatus={client.status} onStatusChange={setStatus} />
+          </div>
         </div>
       </div>
 
@@ -127,6 +143,37 @@ export default function ClientProfileContent({ client }: { client: ClientData })
         initialBills={client.bills || []}
         clientInfo={clientInfo}
       />
+
+      {/* Danger Zone / Delete Section */}
+      <div className="p-4 sm:p-5 bg-red-50/40 dark:bg-red-950/20 border-t border-red-200/60 dark:border-red-900/40">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-red-700 dark:text-red-400 uppercase tracking-wider">Danger Zone</h3>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+              Permanently delete this client and remove all associated bills, services, and records.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 shrink-0"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Delete Client
+          </button>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteClientModal
+        isOpen={isDeleteModalOpen}
+        clientName={client.name}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteClient}
+      />
     </div>
   );
 }
+

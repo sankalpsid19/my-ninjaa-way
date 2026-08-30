@@ -19,8 +19,16 @@ export async function getClients(query?: string) {
       orderBy: { createdAt: "desc" },
     });
     return clients;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching clients:", error);
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const logPath = path.join(process.cwd(), "prisma-error.log");
+      fs.writeFileSync(logPath, `TIMESTAMP: ${new Date().toISOString()}\nERROR: ${error?.stack || error?.message || error}\n\n`, { flag: "a" });
+    } catch (e) {
+      console.error("Failed to write error log:", e);
+    }
     return [];
   }
 }
@@ -148,3 +156,18 @@ export async function createClient(data: {
     return { success: false, error: "Failed to create client." };
   }
 }
+
+export async function deleteClient(id: string) {
+  try {
+    await prisma.client.delete({
+      where: { id },
+    });
+
+    revalidatePath("/clients");
+    return { success: true };
+  } catch (error) {
+    console.error(`Error deleting client ${id}:`, error);
+    return { success: false, error: "Failed to delete client." };
+  }
+}
+
