@@ -52,6 +52,13 @@ export default function manifest(): MetadataRoute.Manifest {
         url: '/clients',
         icons: [{ src: '/icons/icon-192x192.png', sizes: '192x192' }],
       },
+      {
+        name: 'Calorie Calculator',
+        short_name: 'Calories',
+        description: 'Calculate maintenance calories and macro splits',
+        url: '/calorie-calculator',
+        icons: [{ src: '/icons/icon-192x192.png', sizes: '192x192' }],
+      },
     ],
   };
 }

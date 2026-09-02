@@ -156,7 +156,7 @@ export async function getUserModuleStatuses() {
     if (!session || !session.user) {
       return modules.map((m) => ({
         ...m,
-        accessStatus: "unauthenticated" as const,
+        accessStatus: m.slug === "calorie-calculator" ? ("approved" as const) : ("unauthenticated" as const),
       }));
     }
 
@@ -177,6 +177,12 @@ export async function getUserModuleStatuses() {
     const requestMap = new Map(userRequests.map((r) => [r.moduleId, r.status]));
 
     return modules.map((m) => {
+      if (m.slug === "calorie-calculator") {
+        return {
+          ...m,
+          accessStatus: "approved" as const,
+        };
+      }
       const status = requestMap.get(m.id);
       return {
         ...m,
@@ -193,6 +199,10 @@ export async function getUserModuleStatuses() {
 
 export async function checkUserModuleAccess(moduleSlug: string) {
   try {
+    if (moduleSlug === "calorie-calculator") {
+      return { authorized: true, role: "public" };
+    }
+
     const session = await auth();
     if (!session || !session.user) {
       return { authorized: false, reason: "unauthenticated" };

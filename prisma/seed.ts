@@ -117,6 +117,13 @@ async function main() {
       icon: "👥",
       href: "/clients",
     },
+    {
+      slug: "calorie-calculator",
+      title: "Calorie Calculator",
+      description: "Calculate your BMR, maintenance calories (TDEE), and optimal macro splits.",
+      icon: "🔥",
+      href: "/calorie-calculator",
+    },
   ];
 
   for (const mod of defaultModules) {
