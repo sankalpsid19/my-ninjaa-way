@@ -51,8 +51,8 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xl mx-auto shadow-lg mb-4">
-          NW
+        <div className="w-14 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg tracking-wider mx-auto shadow-lg mb-4">
+          MNW
         </div>
         <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">
           Create your account
