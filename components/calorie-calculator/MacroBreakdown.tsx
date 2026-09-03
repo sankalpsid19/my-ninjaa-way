@@ -4,7 +4,6 @@ import {
   MacroPreset,
   MacroDistribution,
   CalculationResults,
-  MACRO_PRESETS,
 } from "@/lib/calorie-calculator";
 
 interface MacroBreakdownProps {
@@ -90,9 +89,6 @@ export default function MacroBreakdown({
                 type="button"
                 onClick={() => {
                   onPresetChange(p.key);
-                  if (p.key !== "custom") {
-                    onCustomMacrosChange(MACRO_PRESETS[p.key]);
-                  }
                 }}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
                   isSelected

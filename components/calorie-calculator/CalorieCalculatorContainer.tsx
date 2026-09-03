@@ -191,15 +191,25 @@ Calculated via My Ninjaa Way`;
             onSelectGoal={(goal) => setInputs({ ...inputs, goal })}
           />
 
-          <MacroBreakdown
-            results={results}
-            macroPreset={inputs.macroPreset}
-            customMacros={inputs.customMacros}
-            onPresetChange={(macroPreset) => setInputs({ ...inputs, macroPreset })}
-            onCustomMacrosChange={(customMacros) =>
-              setInputs({ ...inputs, customMacros, macroPreset: "custom" })
-            }
-          />
+         <MacroBreakdown
+           results={results}
+           macroPreset={inputs.macroPreset}
+           customMacros={inputs.customMacros}
+           onPresetChange={(macroPreset) =>
+             setInputs((prev) => ({
+               ...prev,
+               macroPreset,
+               // Seed the custom sliders with the chosen preset so switching to
+               // Custom afterwards starts from the last selected distribution.
+               customMacros:
+                 macroPreset === "custom" ? prev.customMacros : MACRO_PRESETS[macroPreset],
+             }))
+           }
+           onCustomMacrosChange={(customMacros) =>
+             setInputs((prev) => ({ ...prev, customMacros, macroPreset: "custom" }))
+           }
+         />
+
         </div>
       </div>
 
