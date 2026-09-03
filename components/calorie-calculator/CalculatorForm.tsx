@@ -21,19 +21,34 @@ interface CalculatorFormProps {
 export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(Boolean(inputs.bodyFatPct));
 
-  // Local imperial input states to allow natural typing
+  // Numeric inputs use local string state + type="text" so the user can freely
+  // type multi-digit values without the browser's native number spinner and
+  // cursor resets getting in the way. The parsed/clamped value is committed to
+  // the parent live so the calculator stays in sync while typing.
+  const [ageStr, setAgeStr] = useState(String(inputs.age));
+  const [weightKgStr, setWeightKgStr] = useState(String(inputs.weightKg));
+  const [heightCmStr, setHeightCmStr] = useState(String(inputs.heightCm));
+  const [weightLbsStr, setWeightLbsStr] = useState(
+    String(Math.round(kgToLbs(inputs.weightKg)))
+  );
   const ftIn = cmToFtIn(inputs.heightCm);
-  const [feet, setFeet] = useState(ftIn.feet);
-  const [inches, setInches] = useState(ftIn.inches);
-  const [weightLbs, setWeightLbs] = useState(Math.round(kgToLbs(inputs.weightKg)));
+  const [feetStr, setFeetStr] = useState(String(ftIn.feet));
+  const [inchesStr, setInchesStr] = useState(String(ftIn.inches));
+  const [bodyFatStr, setBodyFatStr] = useState(
+    inputs.bodyFatPct == null ? "" : String(inputs.bodyFatPct)
+  );
 
   const handleUnitToggle = (unit: UnitSystem) => {
     if (unit === inputs.unit) return;
     if (unit === "imperial") {
-      setWeightLbs(Math.round(kgToLbs(inputs.weightKg)));
+      setWeightLbsStr(String(Math.round(kgToLbs(inputs.weightKg))));
       const res = cmToFtIn(inputs.heightCm);
-      setFeet(res.feet);
-      setInches(res.inches);
+      setFeetStr(String(res.feet));
+      setInchesStr(String(res.inches));
+    } else {
+      setAgeStr(String(inputs.age));
+      setWeightKgStr(String(inputs.weightKg));
+      setHeightCmStr(String(inputs.heightCm));
     }
     onChange({ ...inputs, unit });
   };
@@ -42,34 +57,88 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
     onChange({ ...inputs, gender });
   };
 
-  const handleAgeChange = (val: number) => {
-    onChange({ ...inputs, age: Math.max(12, Math.min(100, val)) });
+  const handleAgeChange = (str: string) => {
+    setAgeStr(str);
+    const val = parseInt(str, 10);
+    if (!Number.isNaN(val)) {
+      onChange({ ...inputs, age: Math.max(12, Math.min(100, val)) });
+    }
   };
 
-  const handleWeightKgChange = (val: number) => {
-    onChange({ ...inputs, weightKg: Math.max(30, Math.min(300, val)) });
+  const commitAge = () => {
+    if (Number.isNaN(parseInt(ageStr, 10))) setAgeStr(String(inputs.age));
   };
 
-  const handleWeightLbsChange = (val: number) => {
-    setWeightLbs(val);
-    const kg = lbsToKg(val);
-    onChange({ ...inputs, weightKg: Math.round(kg * 10) / 10 });
+  const handleWeightKgChange = (str: string) => {
+    setWeightKgStr(str);
+    const val = parseFloat(str);
+    if (!Number.isNaN(val)) {
+      onChange({ ...inputs, weightKg: Math.max(30, Math.min(300, val)) });
+    }
   };
 
-  const handleHeightCmChange = (val: number) => {
-    onChange({ ...inputs, heightCm: Math.max(100, Math.min(250, val)) });
+  const commitWeightKg = () => {
+    if (Number.isNaN(parseFloat(weightKgStr))) setWeightKgStr(String(inputs.weightKg));
   };
 
-  const handleFeetChange = (f: number) => {
-    setFeet(f);
-    const cm = Math.round(ftInToCm(f, inches));
-    onChange({ ...inputs, heightCm: cm });
+  const handleWeightLbsChange = (str: string) => {
+    setWeightLbsStr(str);
+    const val = parseInt(str, 10);
+    if (!Number.isNaN(val)) {
+      const kg = lbsToKg(val);
+      onChange({
+        ...inputs,
+        weightKg: Math.max(30, Math.min(300, Math.round(kg * 10) / 10)),
+      });
+    }
   };
 
-  const handleInchesChange = (i: number) => {
-    setInches(i);
-    const cm = Math.round(ftInToCm(feet, i));
-    onChange({ ...inputs, heightCm: cm });
+  const commitWeightLbs = () => {
+    if (Number.isNaN(parseInt(weightLbsStr, 10))) {
+      setWeightLbsStr(String(Math.round(kgToLbs(inputs.weightKg))));
+    }
+  };
+
+  const handleHeightCmChange = (str: string) => {
+    setHeightCmStr(str);
+    const val = parseInt(str, 10);
+    if (!Number.isNaN(val)) {
+      onChange({ ...inputs, heightCm: Math.max(100, Math.min(250, val)) });
+    }
+  };
+
+  const commitHeightCm = () => {
+    if (Number.isNaN(parseInt(heightCmStr, 10))) setHeightCmStr(String(inputs.heightCm));
+  };
+
+  const handleFeetChange = (str: string) => {
+    setFeetStr(str);
+    const f = parseInt(str, 10);
+    if (!Number.isNaN(f)) {
+      const cm = Math.round(ftInToCm(f, parseInt(inchesStr, 10) || 0));
+      onChange({ ...inputs, heightCm: Math.max(100, Math.min(250, cm)) });
+    }
+  };
+
+  const commitFeet = () => {
+    if (Number.isNaN(parseInt(feetStr, 10))) {
+      setFeetStr(String(cmToFtIn(inputs.heightCm).feet));
+    }
+  };
+
+  const handleInchesChange = (str: string) => {
+    setInchesStr(str);
+    const i = parseInt(str, 10);
+    if (!Number.isNaN(i)) {
+      const cm = Math.round(ftInToCm(parseInt(feetStr, 10) || 0, i));
+      onChange({ ...inputs, heightCm: Math.max(100, Math.min(250, cm)) });
+    }
+  };
+
+  const commitInches = () => {
+    if (Number.isNaN(parseInt(inchesStr, 10))) {
+      setInchesStr(String(cmToFtIn(inputs.heightCm).inches));
+    }
   };
 
   const handleActivityChange = (activity: ActivityLevel) => {
@@ -82,6 +151,20 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
       bodyFatPct: val,
       formula: val ? "katch" : "mifflin",
     });
+  };
+
+  const handleBodyFatChangeStr = (str: string) => {
+    setBodyFatStr(str);
+    const val = parseFloat(str);
+    if (!Number.isNaN(val)) {
+      handleBodyFatChange(Math.max(4, Math.min(60, val)));
+    }
+  };
+
+  const commitBodyFat = () => {
+    if (Number.isNaN(parseFloat(bodyFatStr))) {
+      setBodyFatStr(inputs.bodyFatPct == null ? "" : String(inputs.bodyFatPct));
+    }
   };
 
   return (
@@ -165,12 +248,13 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
             <div className="relative">
               <input
                 id="age-input"
-                type="number"
+                type="text"
                 inputMode="numeric"
                 min={12}
                 max={100}
-                value={inputs.age}
-                onChange={(e) => handleAgeChange(parseInt(e.target.value) || 0)}
+                value={ageStr}
+                onChange={(e) => handleAgeChange(e.target.value)}
+                onBlur={commitAge}
                 className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               />
               <span className="absolute right-3.5 top-2.5 text-xs text-zinc-400 font-medium pointer-events-none">
@@ -188,25 +272,27 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
               {inputs.unit === "metric" ? (
                 <input
                   id="weight-input"
-                  type="number"
+                  type="text"
                   inputMode="decimal"
                   step="0.5"
                   min={30}
                   max={300}
-                  value={inputs.weightKg}
-                  onChange={(e) => handleWeightKgChange(parseFloat(e.target.value) || 0)}
+                  value={weightKgStr}
+                  onChange={(e) => handleWeightKgChange(e.target.value)}
+                  onBlur={commitWeightKg}
                   className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
               ) : (
                 <input
                   id="weight-input"
-                  type="number"
+                  type="text"
                   inputMode="numeric"
                   step="1"
                   min={60}
                   max={650}
-                  value={weightLbs}
-                  onChange={(e) => handleWeightLbsChange(parseInt(e.target.value) || 0)}
+                  value={weightLbsStr}
+                  onChange={(e) => handleWeightLbsChange(e.target.value)}
+                  onBlur={commitWeightLbs}
                   className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
               )}
@@ -225,12 +311,13 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
           {inputs.unit === "metric" ? (
             <div className="relative">
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
                 min={100}
                 max={250}
-                value={inputs.heightCm}
-                onChange={(e) => handleHeightCmChange(parseInt(e.target.value) || 0)}
+                value={heightCmStr}
+                onChange={(e) => handleHeightCmChange(e.target.value)}
+                onBlur={commitHeightCm}
                 className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               />
               <span className="absolute right-3.5 top-2.5 text-xs text-zinc-400 font-medium pointer-events-none">
@@ -241,12 +328,13 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
             <div className="grid grid-cols-2 gap-3">
               <div className="relative">
                 <input
-                  type="number"
+                  type="text"
                   inputMode="numeric"
                   min={3}
                   max={7}
-                  value={feet}
-                  onChange={(e) => handleFeetChange(parseInt(e.target.value) || 0)}
+                  value={feetStr}
+                  onChange={(e) => handleFeetChange(e.target.value)}
+                  onBlur={commitFeet}
                   className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
                 <span className="absolute right-3.5 top-2.5 text-xs text-zinc-400 font-medium pointer-events-none">
@@ -255,12 +343,13 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
               </div>
               <div className="relative">
                 <input
-                  type="number"
+                  type="text"
                   inputMode="numeric"
                   min={0}
                   max={11}
-                  value={inches}
-                  onChange={(e) => handleInchesChange(parseInt(e.target.value) || 0)}
+                  value={inchesStr}
+                  onChange={(e) => handleInchesChange(e.target.value)}
+                  onBlur={commitInches}
                   className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
                 <span className="absolute right-3.5 top-2.5 text-xs text-zinc-400 font-medium pointer-events-none">
@@ -328,17 +417,15 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
               <div className="relative">
                 <input
                   id="body-fat-input"
-                  type="number"
+                  type="text"
                   inputMode="decimal"
                   step="0.5"
                   min={4}
                   max={60}
                   placeholder="e.g. 15"
-                  value={inputs.bodyFatPct || ""}
-                  onChange={(e) => {
-                    const val = e.target.value ? parseFloat(e.target.value) : null;
-                    handleBodyFatChange(val);
-                  }}
+                  value={bodyFatStr}
+                  onChange={(e) => handleBodyFatChangeStr(e.target.value)}
+                  onBlur={commitBodyFat}
                   className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <span className="absolute right-3.5 top-2 text-xs text-zinc-400 font-medium">
