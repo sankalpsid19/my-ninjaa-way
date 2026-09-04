@@ -154,10 +154,12 @@ export async function getUserModuleStatuses() {
     });
 
     if (!session || !session.user) {
-      return modules.map((m) => ({
-        ...m,
-        accessStatus: m.slug === "calorie-calculator" ? ("approved" as const) : ("unauthenticated" as const),
-      }));
+      return modules
+        .filter((m) => m.slug !== "clients" && m.title?.toLowerCase() !== "clients")
+        .map((m) => ({
+          ...m,
+          accessStatus: m.slug === "calorie-calculator" ? ("approved" as const) : ("unauthenticated" as const),
+        }));
     }
 
     const userRole = (session.user as any).role;
