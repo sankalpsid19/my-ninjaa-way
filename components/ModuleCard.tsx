@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Calculator, Apple, Users, LayoutGrid, type LucideIcon } from "lucide-react";
+import { Calculator, Apple, Users, Swords, LayoutGrid, type LucideIcon } from "lucide-react";
 import { requestModuleAccess } from "@/lib/actions/auth-actions";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -21,6 +21,7 @@ const MODULE_ICONS: Record<string, LucideIcon> = {
   Calculator,
   Apple,
   Users,
+  Swords,
 };
 
 const getModuleIcon = (icon: string): LucideIcon => MODULE_ICONS[icon] ?? LayoutGrid;

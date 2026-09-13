@@ -124,6 +124,13 @@ async function main() {
       icon: "🔥",
       href: "/calorie-calculator",
     },
+    {
+      slug: "daily-quests",
+      title: "Daily Quests",
+      description: "One quest per day, consistency heatmap, attributes, streaks & the Consistency Ladder.",
+      icon: "⚔️",
+      href: "/daily-quests",
+    },
   ];
 
   for (const mod of defaultModules) {
@@ -173,6 +180,28 @@ async function main() {
       });
     }
   }
+
+  // Seed Achievement Catalogue — Daily Quests Gamification Module (§5.3, §6.5)
+  const achievements = [
+    { code: "first-blood", name: "First Blood", description: "Complete your very first quest.", icon: "🥇", color: "#eab308", predicate: JSON.stringify({ completedDays: 1 }), order: 1 },
+    { code: "climber", name: "Climber", description: "Reach half the top rung on any Consistency Ladder pillar.", icon: "🧗", color: "#f97316", predicate: JSON.stringify({ maxLadderPercent: 0.5 }), order: 2 },
+    { code: "summit", name: "Summit", description: "Reach the top rung on any Consistency Ladder pillar.", icon: "🏁", color: "#8b5cf6", predicate: JSON.stringify({ maxLadderPercent: 1 }), order: 3 },
+    { code: "on-a-roll", name: "On A Roll", description: "Maintain a 7-day completion streak.", icon: "🔥", color: "#ef4444", predicate: JSON.stringify({ streak: 7 }), order: 4 },
+    { code: "iron-fist", name: "Iron Fist", description: "Earn 50 Strength attribute points.", icon: "💪", color: "#f43f5e", predicate: JSON.stringify({ strength: 50 }), order: 5 },
+    { code: "bookworm", name: "Bookworm", description: "Complete 30 Study or Reading quests.", icon: "🧠", color: "#3b82f6", predicate: JSON.stringify({ studyReading: 30 }), order: 6 },
+    { code: "zen-eyes", name: "Zen Eyes", description: "Earn 30 Sense attribute points.", icon: "👁️", color: "#10b981", predicate: JSON.stringify({ sense: 30 }), order: 7 },
+    { code: "early-riser", name: "Early Riser", description: "Finish 10 quests before 9 AM.", icon: "☀️", color: "#f59e0b", predicate: JSON.stringify({ earlyCompletions: 10 }), order: 8 },
+    { code: "legend", name: "Legend", description: "Reach Level 10.", icon: "🐲", color: "#a855f7", predicate: JSON.stringify({ level: 10 }), order: 9 },
+  ];
+
+  for (const ach of achievements) {
+    await prisma.achievement.upsert({
+      where: { code: ach.code },
+      update: ach,
+      create: ach,
+    });
+  }
+  console.log(`Achievement catalogue ready: ${achievements.length} achievements`);
 
   console.log("Seeding finished.");
 }

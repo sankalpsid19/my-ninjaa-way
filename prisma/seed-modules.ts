@@ -25,6 +25,13 @@ async function main() {
       icon: "Users",
       href: "/clients",
     },
+    {
+      slug: "daily-quests",
+      title: "Daily Quests",
+      description: "One quest per day, consistency heatmap, attributes, streaks & the Consistency Ladder.",
+      icon: "Swords",
+      href: "/daily-quests",
+    },
   ];
 
   for (const mod of modules) {

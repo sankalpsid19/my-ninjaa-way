@@ -28,6 +28,66 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* ── Daily Quests gamification module helpers ── */
+@keyframes dq-confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0.15;
+  }
+}
+
+@keyframes dq-pop-in {
+  from {
+    transform: scale(0.82);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes dq-pulse-ring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0);
+  }
+}
+
+.dq-confetti {
+  position: absolute;
+  top: -24px;
+  border-radius: 2px;
+  animation-name: dq-confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  pointer-events: none;
+}
+
+.dq-pop-in {
+  animation: dq-pop-in 0.25s ease-out both;
+}
+
+.dq-pulse-ring {
+  animation: dq-pulse-ring 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dq-confetti,
+  .dq-pop-in,
+  .dq-pulse-ring {
+    animation: none !important;
+  }
+}
+
 /* PWA Standalone Mode adjustments */
 @media all and (display-mode: standalone) {
   body {

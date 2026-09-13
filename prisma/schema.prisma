@@ -66,6 +66,11 @@ model User {
   nutritionLogs       Meal[]
   favoriteFoods       FavoriteFood[]
   savedMeals          SavedMeal[]
+  // Daily Quests Gamification Module
+  questProfile        UserQuestProfile?
+  questLogs           QuestLog[]            @relation("QuestLogUser")
+  playerStats         PlayerStats?
+  userAchievements    UserAchievement[]
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 }
@@ -220,6 +225,108 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+// =====================================================================
+// Daily Quests Gamification Module — §6 Data Models
+// =====================================================================
+
+enum QuestStatus {
+  active
+  completed
+  failed
+}
+
+enum QuestType {
+  workout
+  study
+  reading
+}
+
+model UserQuestProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  onboardedAt        DateTime? // set after the first-run wizard finishes
+  startedAt          DateTime @default(now())
+  role               String   @default("adult") // "student" | "adult"
+  rotation           String   @default("auto") // "auto" | "manual"
+  workoutCapMinutes  Int      @default(120)
+  studyCapMinutes    Int      @default(180)
+  readingCapMinutes  Int      @default(90)
+  heavyDayMultiplier Float    @default(1.25)
+  resetHour          Int      @default(23) // daily deadline hour (23 = 23:59 local) or 5 for early birds
+  lastCompleteKey    String? // last YYYY-MM-DD with a completed task (streak anchor)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  questLogs QuestLog[] @relation("QuestLogProfile")
+}
+
+model QuestLog {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation("QuestLogUser", fields: [userId], references: [id], onDelete: Cascade, map: "QuestLog_user_fkey")
+  profile         UserQuestProfile @relation("QuestLogProfile", fields: [userId], references: [userId], onDelete: Cascade, map: "QuestLog_profile_fkey")
+  date            String // YYYY-MM-DD local day key (one quest per user per day)
+  questType       QuestType
+  discipline      String? // strength | cardio | mobility | endurance (workout only)
+  targetMinutes   Int
+  progressMinutes Int         @default(0)
+  status          QuestStatus @default(active)
+  reflectionNote  String?
+  awardedXp       Int         @default(0)
+  completedAt     DateTime?
+  perfectDay      Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, status])
+  @@index([userId, date])
+}
+
+model PlayerStats {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  xp           Int      @default(0)
+  strength     Int      @default(0)
+  agility      Int      @default(0)
+  stamina      Int      @default(0)
+  intelligence Int      @default(0)
+  sense        Int      @default(0)
+  streak       Int      @default(0)
+  bestStreak   Int      @default(0)
+  perfectDays  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Achievement {
+  id          String           @id @default(uuid())
+  code        String           @unique
+  name        String
+  description String
+  icon        String
+  color       String           @default("#f59e0b")
+  predicate   String // JSON condition string evaluated by the engine
+  order       Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unlockedAt    DateTime    @default(now())
+
+  @@unique([userId, achievementId])
 }
 
 
