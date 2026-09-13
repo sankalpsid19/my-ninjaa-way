@@ -26,6 +26,16 @@ export default function Navbar() {
           </span>
         </Link>
 
+        <nav className="hidden md:flex items-center gap-4 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+          <Link href="/calorie-calculator" className="hover:text-zinc-900 dark:hover:text-white transition">
+            Calorie Calculator
+          </Link>
+          <Link href="/nutrition" className="text-emerald-500 hover:text-emerald-400 font-bold transition flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Nutrition Intelligence
+          </Link>
+        </nav>
+
         <div className="flex items-center gap-4">
           {status === "loading" ? (
             <LoadingSpinner size="sm" />

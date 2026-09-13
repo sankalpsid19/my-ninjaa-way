@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Calculator, Apple, Users, LayoutGrid, type LucideIcon } from "lucide-react";
 import { requestModuleAccess } from "@/lib/actions/auth-actions";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -15,6 +16,14 @@ export interface ModuleItem {
   href: string;
   accessStatus: "unauthenticated" | "not_requested" | "pending" | "approved" | "rejected";
 }
+
+const MODULE_ICONS: Record<string, LucideIcon> = {
+  Calculator,
+  Apple,
+  Users,
+};
+
+const getModuleIcon = (icon: string): LucideIcon => MODULE_ICONS[icon] ?? LayoutGrid;
 
 export default function ModuleCard({ module }: { module: ModuleItem }) {
   const router = useRouter();
@@ -45,11 +54,14 @@ export default function ModuleCard({ module }: { module: ModuleItem }) {
         href={module.href}
         className="group relative flex flex-col p-8 bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 hover:shadow-xl hover:-translate-y-1 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-300 overflow-hidden"
       >
-        <div className="flex items-center justify-between mb-6">
-          <span className="text-4xl group-hover:scale-110 transform transition-transform">
-            {module.icon}
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
+          <span className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-blue-600/10 dark:bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-110 transform transition-transform">
+            {(() => {
+              const Icon = getModuleIcon(module.icon);
+              return <Icon className="w-6 h-6" />;
+            })()}
           </span>
-          <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 border border-emerald-500/20">
+          <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 border border-emerald-500/20 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Accessible
           </span>
@@ -71,21 +83,26 @@ export default function ModuleCard({ module }: { module: ModuleItem }) {
 
   return (
     <div className="relative flex flex-col p-8 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm rounded-3xl shadow-sm border border-zinc-200/80 dark:border-zinc-800/80 transition-all duration-300">
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-4xl opacity-50 filter grayscale">{module.icon}</span>
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
+        <span className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-zinc-200/60 dark:bg-zinc-800 border border-zinc-300/60 dark:border-zinc-700/60 text-zinc-500 dark:text-zinc-400 flex items-center justify-center shrink-0 opacity-60 grayscale">
+          {(() => {
+            const Icon = getModuleIcon(module.icon);
+            return <Icon className="w-6 h-6" />;
+          })()}
+        </span>
         {status === "pending" && (
-          <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 text-xs font-semibold flex items-center gap-1.5 border border-amber-500/20">
+          <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 text-xs font-semibold flex items-center gap-1.5 border border-amber-500/20 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
             Pending Approval
           </span>
         )}
         {status === "rejected" && (
-          <span className="px-3 py-1 rounded-full bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 text-xs font-semibold flex items-center gap-1.5 border border-red-500/20">
+          <span className="px-3 py-1 rounded-full bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 text-xs font-semibold flex items-center gap-1.5 border border-red-500/20 whitespace-nowrap">
             Access Denied
           </span>
         )}
         {(status === "not_requested" || status === "unauthenticated") && (
-          <span className="px-3 py-1 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs font-medium flex items-center gap-1">
+          <span className="px-3 py-1 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs font-medium flex items-center gap-1 whitespace-nowrap">
             🔒 Restricted
           </span>
         )}

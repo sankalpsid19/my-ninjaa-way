@@ -56,14 +56,135 @@ model Bill {
 }
 
 model User {
+  id                  String               @id @default(uuid())
+  name                String
+  email               String               @unique
+  password            String
+  role                String               @default("user") // "user" | "admin"
+  accessRequests      AccessRequest[]
+  nutritionProfile    UserNutritionProfile?
+  nutritionLogs       Meal[]
+  favoriteFoods       FavoriteFood[]
+  savedMeals          SavedMeal[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model UserNutritionProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  age            Int?
+  gender         String?  // male | female | other
+  heightCm       Float?
+  weightKg       Float?
+  activityLevel  String?  // sedentary | light | moderate | active | very_active
+  goal           String?  // lose | maintain | gain
+  targetCalories Float    @default(2000)
+  targetProtein  Float    @default(140)
+  targetCarbs    Float    @default(250)
+  targetFat      Float    @default(70)
+  targetFiber    Float    @default(30)
+  dietPreference String   @default("Non-vegetarian") // Vegetarian | Eggetarian | Vegan | Non-vegetarian
+  focusAreas     String[] @default([])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model FoodItem {
   id             String          @id @default(uuid())
   name           String
-  email          String          @unique
-  password       String
-  role           String          @default("user") // "user" | "admin"
-  accessRequests AccessRequest[]
+  category       String          @default("General") // Staples | Protein | Vegetables | Fruits | Dairy | Snacks | Beverages
+  servingSize    Float           @default(100)
+  servingUnit    String          @default("g") // g | piece | bowl | roti | cup | glass | tbsp | tsp
+  calories       Float
+  protein        Float
+  carbs          Float
+  fat            Float
+  fiber          Float           @default(0)
+  sugar          Float           @default(0)
+  saturatedFat   Float           @default(0)
+  sodium         Float           @default(0) // mg
+  potassium      Float           @default(0) // mg
+  calcium        Float           @default(0) // mg
+  iron           Float           @default(0) // mg
+  magnesium      Float           @default(0) // mg
+  zinc           Float           @default(0) // mg
+  vitaminA       Float           @default(0) // mcg
+  vitaminC       Float           @default(0) // mg
+  vitaminD       Float           @default(0) // mcg
+  vitaminB12     Float           @default(0) // mcg
+  folate         Float           @default(0) // mcg
+  isVerified     Boolean         @default(true)
+  mealItems      MealItem[]
+  favoriteBy     FavoriteFood[]
+  savedMealItems SavedMealItem[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+
+  @@index([name])
+}
+
+model Meal {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String     // YYYY-MM-DD
+  mealType  String     // Breakfast | Lunch | Snack | Dinner
+  items     MealItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId, date])
+}
+
+model MealItem {
+  id         String   @id @default(uuid())
+  mealId     String
+  meal       Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodId     String
+  food       FoodItem @relation(fields: [foodId], references: [id])
+  quantity   Float    // multiplier of default serving unit/size
+  unit       String   // serving unit used
+  calories   Float
+  protein    Float
+  carbs      Float
+  fat        Float
+  fiber      Float    @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model FavoriteFood {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodId    String
+  food      FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, foodId])
+}
+
+model SavedMeal {
+  id        String          @id @default(uuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  items     SavedMealItem[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model SavedMealItem {
+  id          String    @id @default(uuid())
+  savedMealId String
+  savedMeal   SavedMeal @relation(fields: [savedMealId], references: [id], onDelete: Cascade)
+  foodId      String
+  food        FoodItem  @relation(fields: [foodId], references: [id])
+  quantity    Float
+  unit        String
+  createdAt   DateTime  @default(now())
 }
 
 model Module {
@@ -100,4 +221,5 @@ model PasswordResetToken {
 
   @@index([email])
 }
+
 

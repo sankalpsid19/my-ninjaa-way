@@ -265,6 +265,24 @@ export default function MacroBreakdown({
           </div>
         </div>
       )}
+      {/* Start Nutrition Tracking CTA Banner */}
+      <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 block mb-1">
+            🚀 Evolve Your Fitness Journey
+          </span>
+          <h4 className="text-lg font-bold text-white">Want to track what you're actually eating daily?</h4>
+          <p className="text-xs text-slate-300 mt-1">
+            Seamlessly monitor your daily calories, protein, fiber, vitamins & minerals with our Nutrition Intelligence dashboard.
+          </p>
+        </div>
+        <a
+          href="/nutrition"
+          className="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs whitespace-nowrap shadow-lg shadow-emerald-500/20 transition active:scale-95 flex items-center gap-2"
+        >
+          Start Nutrition Tracking →
+        </a>
+      </div>
     </div>
   );
 }

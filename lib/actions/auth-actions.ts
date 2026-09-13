@@ -69,6 +69,11 @@ export async function requestModuleAccess(moduleSlug: string) {
       return { success: false, error: "Module not found." };
     }
 
+    // Client Management is admin-only: regular users cannot request access.
+    if (targetModule.slug === "clients" && (session.user as any).role !== "admin") {
+      return { success: false, error: "Client Management is available to admins only." };
+    }
+
     const request = await prisma.accessRequest.upsert({
       where: {
         userId_moduleId: {
@@ -158,7 +163,7 @@ export async function getUserModuleStatuses() {
         .filter((m) => m.slug !== "clients" && m.title?.toLowerCase() !== "clients")
         .map((m) => ({
           ...m,
-          accessStatus: m.slug === "calorie-calculator" ? ("approved" as const) : ("unauthenticated" as const),
+          accessStatus: (m.slug === "calorie-calculator" || m.slug === "nutrition") ? ("approved" as const) : ("unauthenticated" as const),
         }));
     }
 
@@ -178,21 +183,24 @@ export async function getUserModuleStatuses() {
 
     const requestMap = new Map(userRequests.map((r) => [r.moduleId, r.status]));
 
-    return modules.map((m) => {
-      if (m.slug === "calorie-calculator") {
+    // Client Management is admin-only: hide it from regular users.
+    return modules
+      .filter((m) => m.slug !== "clients" && m.title?.toLowerCase() !== "clients")
+      .map((m) => {
+        if (m.slug === "calorie-calculator" || m.slug === "nutrition") {
+          return {
+            ...m,
+            accessStatus: "approved" as const,
+          };
+        }
+        const status = requestMap.get(m.id);
         return {
           ...m,
-          accessStatus: "approved" as const,
+          accessStatus: status
+            ? (status as "pending" | "approved" | "rejected")
+            : ("not_requested" as const),
         };
-      }
-      const status = requestMap.get(m.id);
-      return {
-        ...m,
-        accessStatus: status
-          ? (status as "pending" | "approved" | "rejected")
-          : ("not_requested" as const),
-      };
-    });
+      });
   } catch (error) {
     console.error("Error getting module statuses:", error);
     return [];
@@ -201,7 +209,7 @@ export async function getUserModuleStatuses() {
 
 export async function checkUserModuleAccess(moduleSlug: string) {
   try {
-    if (moduleSlug === "calorie-calculator") {
+    if (moduleSlug === "calorie-calculator" || moduleSlug === "nutrition") {
       return { authorized: true, role: "public" };
     }
 
@@ -213,6 +221,11 @@ export async function checkUserModuleAccess(moduleSlug: string) {
     const role = (session.user as any).role;
     if (role === "admin") {
       return { authorized: true, role: "admin" };
+    }
+
+    // Client Management is admin-only.
+    if (moduleSlug === "clients") {
+      return { authorized: false, reason: "restricted" };
     }
 
     const userId = (session.user as any).id;

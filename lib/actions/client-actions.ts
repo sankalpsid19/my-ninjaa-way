@@ -2,8 +2,20 @@
 
 import { prisma } from "../prisma";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/lib/auth";
+
+async function isAdmin(): Promise<boolean> {
+  try {
+    const session = await auth();
+    return !!session?.user && (session.user as any).role === "admin";
+  } catch (error) {
+    console.error("Admin check error:", error);
+    return false;
+  }
+}
 
 export async function getClients(query?: string) {
+  if (!(await isAdmin())) return [];
   try {
     const clients = await prisma.client.findMany({
       where: query ? {
@@ -34,6 +46,7 @@ export async function getClients(query?: string) {
 }
 
 export async function getClientById(id: string) {
+  if (!(await isAdmin())) return null;
   try {
     const client = await prisma.client.findUnique({
       where: { id },
@@ -54,6 +67,9 @@ export async function getClientById(id: string) {
 }
 
 export async function updateClientStatus(id: string, status: string) {
+  if (!(await isAdmin())) {
+    return { success: false, error: "Unauthorized. Admin privileges required." };
+  }
   try {
     const updatedClient = await prisma.client.update({
       where: { id },
@@ -71,6 +87,9 @@ export async function updateClientStatus(id: string, status: string) {
 }
 
 export async function recordPayment(clientId: string, amount: number, month: string) {
+  if (!(await isAdmin())) {
+    return { success: false, error: "Unauthorized. Admin privileges required." };
+  }
   try {
     // Check if there's already a pending bill for this month
     const existingBill = await prisma.bill.findFirst({
@@ -129,6 +148,9 @@ export async function createClient(data: {
   pocName?: string;
   pocEmail?: string;
 }) {
+  if (!(await isAdmin())) {
+    return { success: false, error: "Unauthorized. Admin privileges required." };
+  }
   try {
     const joinDate = new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     
@@ -158,6 +180,9 @@ export async function createClient(data: {
 }
 
 export async function deleteClient(id: string) {
+  if (!(await isAdmin())) {
+    return { success: false, error: "Unauthorized. Admin privileges required." };
+  }
   try {
     await prisma.client.delete({
       where: { id },
