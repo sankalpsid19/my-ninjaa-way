@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import Navbar from "@/components/Navbar";
@@ -66,6 +67,7 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <PWAInstallBanner />
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
