@@ -3,7 +3,14 @@
 // XP curve & streaks (§4.5), consistency score & achievement predicates (§5).
 
 import type { Discipline, Pillar, QuestSettings, QuestType } from "./types";
-import { WEEKDAY_RHYTHM, labelFor, descriptionFor } from "./quest-templates";
+import {
+  WEEKDAY_RHYTHM,
+  WORKOUT_CYCLE,
+  WORKOUT_CYCLE_DAY,
+  labelFor,
+  descriptionFor,
+  variantCountFor,
+} from "./quest-templates";
 
 // §4.6 Consistency Ladder — pillar → base/step/cap (minutes).
 // Base = Day-1 target; step = +minutes per completed day; cap = hard ceiling.
@@ -24,6 +31,8 @@ export interface QuestTemplate {
   discipline: Discipline;
   label: string;
   description: string;
+  /** Flavor variant index chosen for this slot — persisted on QuestLog so views render it. */
+  variant: number;
   targetMinutes: number;
   heavy: boolean;
 }
@@ -69,15 +78,43 @@ export function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
+/** Deterministic string hash (djb2) — stable across runs & users. */
+export function hashString(s: string): number {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return h;
+}
+
+/**
+ * §per-user variety — deterministic flavor-variant index for a slot.
+ * The same (seed, day, questType, discipline) always yields the same variant,
+ * while different seeds (i.e. different users) yield different variants.
+ */
+export function questVariantIndex(
+  seed: number,
+  dayKey: string,
+  questType: QuestType,
+  discipline: Discipline,
+): number {
+  const count = variantCountFor(questType, discipline);
+  if (count <= 1) return 0;
+  const h = hashString(`${dayKey}|${questType}|${discipline ?? ""}|${Math.abs(seed) % 1_000_000_007}`);
+  return ((h % count) + count) % count;
+}
+
 /**
  * §4.2/§4.6 — Compute today's quest from the weekday rhythm, the user's
  * role/rotation settings, and ladder history (completed counts + missed days).
+ * `seed` (a per-user random value from UserQuestProfile.questSeed) rotates the
+ * Mon/Wed/Fri workout disciplines and picks the day's task flavor variant, so
+ * different users receive different tasks on the same day.
  */
 export function computeTodayTask(
   now: Date,
   settings: QuestSettings,
   history: HistorySummary,
   manualPillar?: QuestType | null,
+  seed = 0,
 ): QuestTemplate {
   const dow = now.getDay();
   const rhythm = WEEKDAY_RHYTHM[dow];
@@ -88,6 +125,14 @@ export function computeTodayTask(
   if (questType === "study" || questType === "reading") {
     questType = settings.role === "student" ? "study" : "reading";
     discipline = null;
+  }
+
+  // Per-user variety: rotate the 3 regular workout disciplines (Mon/Wed/Fri)
+  // by the user's seed. Saturday's Endurance Heavy Day stays fixed.
+  if (questType === "workout" && WORKOUT_CYCLE_DAY[dow] !== undefined) {
+    const offset = Math.abs(seed) % WORKOUT_CYCLE.length;
+    const idx = (WORKOUT_CYCLE_DAY[dow] + offset) % WORKOUT_CYCLE.length;
+    discipline = WORKOUT_CYCLE[idx];
   }
 
   // Manual rotation overrides today's pillar (workout defaults to strength).
@@ -105,11 +150,15 @@ export function computeTodayTask(
     target = Math.min(capFor("workout", settings), Math.round(target * settings.heavyDayMultiplier));
   }
 
+  const dayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const variant = questVariantIndex(seed, dayKey, questType, discipline);
+
   return {
     questType,
     discipline,
-    label: labelFor(questType, discipline),
-    description: descriptionFor(questType, discipline),
+    label: labelFor(questType, discipline, variant),
+    description: descriptionFor(questType, discipline, variant),
+    variant,
     targetMinutes: Math.max(1, target),
     heavy,
   };

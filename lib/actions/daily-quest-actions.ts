@@ -97,7 +97,14 @@ async function getOrCreate(userId: string): Promise<{ profile: UserQuestProfile;
   let stats = profile ? await prisma.playerStats.findUnique({ where: { userId } }) : null;
 
   if (!profile) {
-    profile = await prisma.userQuestProfile.create({ data: { userId } });
+    profile = await prisma.userQuestProfile.create({
+      data: {
+        userId,
+        // Random per-user variety seed — rotates workout disciplines & picks
+        // task flavor variants so different users get different tasks.
+        questSeed: Math.floor(Math.random() * 2_147_483_647),
+      },
+    });
   }
   if (!stats) {
     stats = await prisma.playerStats.create({ data: { userId } });
@@ -146,7 +153,7 @@ async function ensureTodayTask(userId: string, todayKey: string): Promise<QuestL
   const { profile } = await getOrCreate(userId);
   const settings = settingsFromProfile(profile);
   const history = await buildHistory(userId, profile, todayKey);
-  const template = computeTodayTask(parseDayKey(todayKey), settings, history);
+  const template = computeTodayTask(parseDayKey(todayKey), settings, history, null, profile.questSeed);
 
   return prisma.questLog.create({
     data: {
@@ -154,6 +161,7 @@ async function ensureTodayTask(userId: string, todayKey: string): Promise<QuestL
       date: todayKey,
       questType: template.questType as QuestLog["questType"],
       discipline: template.discipline,
+      variant: template.variant,
       targetMinutes: template.targetMinutes,
     },
   });
@@ -171,8 +179,8 @@ function toTaskView(log: QuestLog): QuestTaskView {
     date: log.date,
     questType,
     discipline,
-    label: labelFor(questType, discipline),
-    description: descriptionFor(questType, discipline),
+    label: labelFor(questType, discipline, log.variant),
+    description: descriptionFor(questType, discipline, log.variant),
     targetMinutes: log.targetMinutes,
     progressMinutes: log.progressMinutes,
     status: log.status.toLowerCase() as QuestStatusType,
@@ -519,12 +527,13 @@ export async function pickTodayTask(choice: QuestType): Promise<ActionResult> {
     }
 
     const history = await buildHistory(userId, profile, todayKey);
-    const template = computeTodayTask(parseDayKey(todayKey), settings, history, choice);
+    const template = computeTodayTask(parseDayKey(todayKey), settings, history, choice, profile.questSeed);
     await prisma.questLog.update({
       where: { id: task.id },
       data: {
         questType: template.questType as QuestLog["questType"],
         discipline: template.discipline,
+        variant: template.variant,
         targetMinutes: template.targetMinutes,
       },
     });
@@ -623,7 +632,7 @@ export async function getHistory(month: string): Promise<{ ok: boolean; days?: D
         date: l.date,
         questType,
         discipline,
-        label: labelFor(questType, discipline),
+        label: labelFor(questType, discipline, l.variant),
         status: l.status.toLowerCase() as QuestStatusType,
         targetMinutes: l.targetMinutes,
         progressMinutes: l.progressMinutes,

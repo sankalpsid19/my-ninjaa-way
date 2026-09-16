@@ -256,6 +256,7 @@ model UserQuestProfile {
   readingCapMinutes  Int      @default(90)
   heavyDayMultiplier Float    @default(1.25)
   resetHour          Int      @default(23) // daily deadline hour (23 = 23:59 local) or 5 for early birds
+  questSeed          Int      @default(0) // per-user variety seed: rotates workout disciplines & picks task flavor variants
   lastCompleteKey    String? // last YYYY-MM-DD with a completed task (streak anchor)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -271,6 +272,7 @@ model QuestLog {
   date            String // YYYY-MM-DD local day key (one quest per user per day)
   questType       QuestType
   discipline      String? // strength | cardio | mobility | endurance (workout only)
+  variant         Int      @default(0) // task flavor variant index chosen at issue time (per-user variety)
   targetMinutes   Int
   progressMinutes Int         @default(0)
   status          QuestStatus @default(active)

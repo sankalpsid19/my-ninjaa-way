@@ -34,6 +34,9 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
   const ftIn = cmToFtIn(inputs.heightCm);
   const [feetStr, setFeetStr] = useState(String(ftIn.feet));
   const [inchesStr, setInchesStr] = useState(String(ftIn.inches));
+  // Height-specific unit (independent of the global kg/lbs toggle), so users can
+  // enter height in centimeters OR feet+inches in the Height field itself.
+  const [heightUnit, setHeightUnit] = useState<"cm" | "ftin">(inputs.unit === "imperial" ? "ftin" : "cm");
   const [bodyFatStr, setBodyFatStr] = useState(
     inputs.bodyFatPct == null ? "" : String(inputs.bodyFatPct)
   );
@@ -50,6 +53,8 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
       setWeightKgStr(String(inputs.weightKg));
       setHeightCmStr(String(inputs.heightCm));
     }
+    // Keep the Height field's unit in sync with the global unit toggle.
+    setHeightUnit(unit === "imperial" ? "ftin" : "cm");
     onChange({ ...inputs, unit });
   };
 
@@ -139,6 +144,20 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
     if (Number.isNaN(parseInt(inchesStr, 10))) {
       setInchesStr(String(cmToFtIn(inputs.heightCm).inches));
     }
+  };
+
+  // Switch the Height field between cm and ft+in. Values are re-derived from the
+  // canonical heightCm so nothing goes stale when toggling back and forth.
+  const switchHeightUnit = (u: "cm" | "ftin") => {
+    if (u === heightUnit) return;
+    if (u === "ftin") {
+      const res = cmToFtIn(inputs.heightCm);
+      setFeetStr(String(res.feet));
+      setInchesStr(String(res.inches));
+    } else {
+      setHeightCmStr(String(inputs.heightCm));
+    }
+    setHeightUnit(u);
   };
 
   const handleActivityChange = (activity: ActivityLevel) => {
@@ -305,10 +324,36 @@ export default function CalculatorForm({ inputs, onChange }: CalculatorFormProps
 
         {/* Height */}
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
-            Height ({inputs.unit === "metric" ? "Centimeters" : "Feet & Inches"})
-          </label>
-          {inputs.unit === "metric" ? (
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+              Height
+            </label>
+            <div className="inline-flex p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+              <button
+                type="button"
+                onClick={() => switchHeightUnit("cm")}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                  heightUnit === "cm"
+                    ? "bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                }`}
+              >
+                cm
+              </button>
+              <button
+                type="button"
+                onClick={() => switchHeightUnit("ftin")}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                  heightUnit === "ftin"
+                    ? "bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                }`}
+              >
+                ft + in
+              </button>
+            </div>
+          </div>
+          {heightUnit === "cm" ? (
             <div className="relative">
               <input
                 type="text"

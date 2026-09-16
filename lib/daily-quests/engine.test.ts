@@ -158,3 +158,56 @@ test("calcMissedDays: counts days strictly between lastComplete and today", () =
   assert.equal(calcMissedDays("2026-09-01", "2026-09-10", "2026-09-10"), 0);
   assert.equal(calcMissedDays(null, null, "2026-09-10"), 0);
 });
+
+// --- §per-user variety ---
+const emptyHistory = { completedByPillar: { workout: 0, study: 0, reading: 0 }, missesStreakDays: 0 };
+
+test("computeTodayTask: seed rotates Mon/Wed/Fri workout disciplines (Sat heavy fixed)", () => {
+  const mon = new Date(2026, 8, 7, 10, 0, 0); // Mon
+  const wed = new Date(2026, 8, 9, 10, 0, 0); // Wed
+  const fri = new Date(2026, 8, 11, 10, 0, 0); // Fri
+  const sat = new Date(2026, 8, 12, 10, 0, 0); // Sat
+
+  // seed 0 → the base rhythm (Mon=strength, Wed=cardio, Fri=mobility)
+  assert.equal(computeTodayTask(mon, baseSettings, emptyHistory, null, 0).discipline, "strength");
+  assert.equal(computeTodayTask(wed, baseSettings, emptyHistory, null, 0).discipline, "cardio");
+  assert.equal(computeTodayTask(fri, baseSettings, emptyHistory, null, 0).discipline, "mobility");
+
+  // seed 1 → rotated by one (Mon=cardio, Wed=mobility, Fri=strength)
+  assert.equal(computeTodayTask(mon, baseSettings, emptyHistory, null, 1).discipline, "cardio");
+  assert.equal(computeTodayTask(wed, baseSettings, emptyHistory, null, 1).discipline, "mobility");
+  assert.equal(computeTodayTask(fri, baseSettings, emptyHistory, null, 1).discipline, "strength");
+
+  // seed 2 → rotated by two; seed 3 → back to the base cycle
+  assert.equal(computeTodayTask(mon, baseSettings, emptyHistory, null, 2).discipline, "mobility");
+  assert.equal(computeTodayTask(mon, baseSettings, emptyHistory, null, 3).discipline, "strength");
+
+  // Saturday's Endurance Heavy Day is invariant to the seed
+  assert.equal(computeTodayTask(sat, baseSettings, emptyHistory, null, 0).discipline, "endurance");
+  assert.equal(computeTodayTask(sat, baseSettings, emptyHistory, null, 1).discipline, "endurance");
+  assert.equal(computeTodayTask(sat, baseSettings, emptyHistory, null, 5).heavy, true);
+
+  // Ladder target depends only on the pillar, not the seed
+  assert.equal(computeTodayTask(mon, baseSettings, emptyHistory, null, 1).targetMinutes, 45);
+});
+
+test("computeTodayTask: seed picks deterministic flavor variants that differ across users", () => {
+  const mon = new Date(2026, 8, 7, 10, 0, 0); // Mon
+  const a = computeTodayTask(mon, baseSettings, emptyHistory, null, 7);
+  const b = computeTodayTask(mon, baseSettings, emptyHistory, null, 7);
+  assert.equal(a.label, b.label); // deterministic for the same user/day
+  assert.equal(a.variant, b.variant);
+
+  // Across a spread of seeds, at least two distinct variants appear on the same day
+  const labels = new Set(
+    Array.from({ length: 20 }, (_, seed) => computeTodayTask(mon, baseSettings, emptyHistory, null, seed).label),
+  );
+  assert.ok(labels.size > 1, "expected per-user variety in task labels, got: " + [...labels].join(", "));
+
+  // Type + target identical regardless of seed (variation is discipline/flavor only)
+  for (let seed = 0; seed < 10; seed++) {
+    const t = computeTodayTask(mon, baseSettings, emptyHistory, null, seed);
+    assert.equal(t.questType, "workout");
+    assert.equal(t.targetMinutes, 45);
+  }
+});
