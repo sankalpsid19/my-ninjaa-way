@@ -1,5 +1,5 @@
 // My Ninjaa Way (MNW) Service Worker
-const CACHE_NAME = 'mnw-pwa-v2';
+const CACHE_NAME = 'mnw-pwa-v3';
 
 const PRECACHE_ASSETS = [
   '/calorie-calculator',

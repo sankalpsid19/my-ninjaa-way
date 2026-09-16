@@ -18,6 +18,16 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Environment variables
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | Yes | Postgres connection string (Prisma). |
+| `AUTH_SECRET` / `NEXTAUTH_URL` | Yes | NextAuth config. |
+| `USDA_FDC_API_KEY` | No | USDA FoodData Central key for internet food search. Free at https://fdc.nal.usda.gov/api-key-signup.html. Without it, a shared `DEMO_KEY` (rate-limited, ~30 req/min) is used. `USDA_FDC_API_KEY_2` / `_3` are tried next for additional quota. |
+
+Internet food search in the Nutrition Intelligence module (`lib/nutrition/internet-foods.ts`) queries USDA FoodData Central and Open Food Facts (key-less, with automatic regional-mirror fallback) so foods missing from the local `FoodItem` table can still be found and logged.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

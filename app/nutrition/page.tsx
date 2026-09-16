@@ -17,6 +17,7 @@ import {
   NutritionDaySummary,
   UserTargets,
   DEFAULT_TARGETS,
+  FoodItemData,
 } from "@/lib/nutrition/engine";
 import { LayoutDashboard, PlusCircle, ShieldCheck, History } from "lucide-react";
 
@@ -59,13 +60,21 @@ export default function NutritionPage() {
     setShowLogModal(true);
   }, []);
 
-  const handleLogFood = async (foodId: string, quantity: number, unit: string, mealType: string) => {
+  const handleLogFood = async (foodId: string, quantity: number, unit: string, mealType: string, foodData?: FoodItemData) => {
     if (!userId) return;
     try {
       await fetch("/api/meals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, date: dateStr, mealType, foodId, quantity, unit }),
+        body: JSON.stringify({
+          userId,
+          date: dateStr,
+          mealType,
+          foodId,
+          quantity,
+          unit,
+          ...(foodData ? { foodData } : {}),
+        }),
       });
       fetchTodayData();
     } catch (err) {

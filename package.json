@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test lib/daily-quests/*.test.ts",
+    "test": "tsx --test lib/daily-quests/*.test.ts lib/nutrition/*.test.ts",
     "test:rollover": "tsx tests/daily-quests-rollover.ts",
     "postinstall": "prisma generate"
   },

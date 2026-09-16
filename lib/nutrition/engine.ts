@@ -22,6 +22,12 @@ export interface FoodItemData {
   vitaminD?: number;
   vitaminB12?: number;
   folate?: number;
+  /** "local" = stored in the app's FoodItem table, "web" = fetched from an online database. */
+  source?: "local" | "web";
+  /** Provider id for web items (USDA fdcId or Open Food Facts code). */
+  externalId?: string;
+  /** Brand / manufacturer for web items (Open Food Facts or USDA branded). */
+  brand?: string;
 }
 
 export interface MealItemData {

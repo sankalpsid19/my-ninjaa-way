@@ -5,13 +5,53 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, date, mealType, foodId, quantity, unit } = body;
+    const { userId, date, mealType, foodId, quantity, unit, foodData } = body;
 
     if (!userId || !date || !mealType || !foodId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const food = await prisma.foodItem.findUnique({ where: { id: foodId } });
+    // Look up food; if not found and web food payload provided, persist first.
+    let food = await prisma.foodItem.findUnique({ where: { id: foodId } });
+
+    if (!food && foodData && typeof foodData === "object") {
+      // Try to reuse an existing row with the same name to avoid duplicates.
+      const existingByName = await prisma.foodItem.findFirst({
+        where: { name: { equals: foodData.name, mode: "insensitive" } },
+      });
+      if (existingByName) {
+        food = existingByName;
+      } else {
+        food = await prisma.foodItem.create({
+          data: {
+            name: foodData.name,
+            category: foodData.category || "General",
+            servingSize: foodData.servingSize || 100,
+            servingUnit: foodData.servingUnit || "g",
+            calories: foodData.calories || 0,
+            protein: foodData.protein || 0,
+            carbs: foodData.carbs || 0,
+            fat: foodData.fat || 0,
+            fiber: foodData.fiber || 0,
+            sugar: foodData.sugar || 0,
+            saturatedFat: foodData.saturatedFat || 0,
+            sodium: foodData.sodium || 0,
+            potassium: foodData.potassium || 0,
+            calcium: foodData.calcium || 0,
+            iron: foodData.iron || 0,
+            magnesium: foodData.magnesium || 0,
+            zinc: foodData.zinc || 0,
+            vitaminA: foodData.vitaminA || 0,
+            vitaminC: foodData.vitaminC || 0,
+            vitaminD: foodData.vitaminD || 0,
+            vitaminB12: foodData.vitaminB12 || 0,
+            folate: foodData.folate || 0,
+            isVerified: false,
+          },
+        });
+      }
+    }
+
     if (!food) {
       return NextResponse.json({ error: "Food item not found" }, { status: 404 });
     }
