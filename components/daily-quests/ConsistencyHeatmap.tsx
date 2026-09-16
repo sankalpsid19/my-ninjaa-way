@@ -13,7 +13,7 @@ const DOW_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const CELL_STYLE: Record<string, { bg: string; ring?: string }> = {
   none: { bg: "transparent" },
-  failed: { bg: "#3f3f46", ring: "rgba(255,255,255,0.12)" },
+  failed: { bg: "#ef4444" },
   completed: { bg: "#16a34a" },
   perfect: { bg: "#f59e0b" },
   active: { bg: "#f59e0b", ring: "rgba(245,158,11,0.6)" },
@@ -176,8 +176,8 @@ export default function ConsistencyHeatmap({
                   <button
                     key={c.date}
                     onClick={() => onCellClick(c)}
-                    aria-label={`${c.date} — ${c.status === "none" ? "no quest" : `${c.status}${qMeta ? ` ${qMeta.label}` : ""}${c.xp ? `, +${c.xp} XP` : ""}`}`}
-                    title={`${c.date}${qMeta ? ` · ${qMeta.label}` : ""}${c.status !== "none" ? ` · ${c.status}${c.xp ? ` · +${c.xp} XP` : ""}` : " · no quest"}`}
+                    aria-label={`${c.date} — ${c.status === "none" ? "no quest" : `${c.status === "failed" ? "missed" : c.status}${qMeta ? ` ${qMeta.label}` : ""}${c.xp ? `, +${c.xp} XP` : ""}`}`}
+                    title={`${c.date}${qMeta ? ` · ${qMeta.label}` : ""}${c.status !== "none" ? ` · ${c.status === "failed" ? "missed" : c.status}${c.xp ? ` · +${c.xp} XP` : ""}` : " · no quest"}`}
                     className="rounded-[3px] transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70"
                     style={{
                       gridColumn: col + 1,

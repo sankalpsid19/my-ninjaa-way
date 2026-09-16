@@ -18,12 +18,21 @@ export const QUEST_TYPE_META: Record<QuestType, { icon: string; color: string; l
   reading: PILLAR_META.reading,
 };
 
-export const STAT_LABELS: Record<StatKey, { label: string; color: string }> = {
-  strength: { label: "Strength", color: "#f43f5e" },
-  agility: { label: "Agility", color: "#22d3ee" },
-  stamina: { label: "Stamina", color: "#22c55e" },
-  intelligence: { label: "Intelligence", color: "#a78bfa" },
-  sense: { label: "Sense", color: "#f59e0b" },
+export const STAT_LABELS: Record<StatKey, { label: string; color: string; blurb: string }> = {
+  strength: { label: "Strength", color: "#f43f5e", blurb: "Raw power" },
+  agility: { label: "Agility", color: "#22d3ee", blurb: "Speed & reflexes" },
+  stamina: { label: "Stamina", color: "#22c55e", blurb: "Resilience & health" },
+  intelligence: { label: "Intelligence", color: "#a78bfa", blurb: "Knowledge & memory" },
+  sense: { label: "Sense", color: "#f59e0b", blurb: "Perception & focus" },
+};
+
+/** Icon shown at each vertex of the StatHexagon, in the radar's render order. */
+export const STAT_ICONS: Record<StatKey, string> = {
+  agility: "⚡",
+  strength: "💪",
+  stamina: "❤️",
+  intelligence: "🧠",
+  sense: "👁️",
 };
 
 /** Neutral display color for a quest-type icon chip (used across cards). */

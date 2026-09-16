@@ -596,6 +596,7 @@ export async function getConsistency(rangeMonths = 12): Promise<{ ok: boolean; c
     const { profile } = await getOrCreate(userId);
     const settings = settingsFromProfile(profile);
     const todayKey = currentQuestDayKey(settings.resetHour);
+    await dailyCheckpoint(userId, todayKey); // flag unfinished past quests before computing cells
     const consistency = await buildConsistency(userId, profile, todayKey, Math.min(24, Math.max(1, rangeMonths)));
     return { ok: true, consistency };
   } catch (error) {

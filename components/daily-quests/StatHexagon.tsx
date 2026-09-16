@@ -1,6 +1,6 @@
 "use client";
 
-import { STAT_LABELS, type StatKey } from "./questMeta";
+import { STAT_LABELS, STAT_ICONS, type StatKey } from "./questMeta";
 import type { PlayerStatsView } from "@/lib/daily-quests/types";
 
 const ORDER: StatKey[] = ["agility", "strength", "stamina", "intelligence", "sense"];
@@ -64,18 +64,24 @@ export default function StatHexagon({
       </svg>
       <div className="absolute inset-0 pointer-events-none">
         {ORDER.map((k, i) => {
-          const p = pointAt(cx, cy, maxR + 14, (360 / ORDER.length) * i);
+          const p = pointAt(cx, cy, maxR + 16, (360 / ORDER.length) * i);
           const meta = STAT_LABELS[k];
           return (
             <div
               key={k}
               className="absolute -translate-x-1/2 -translate-y-1/2 text-center"
               style={{ left: p.x, top: p.y }}
-              title={`${meta.label}: ${stats[k]} pts`}
+              title={`${meta.label}: ${stats[k]} pts — ${meta.blurb}`}
             >
-              <div className="text-sm leading-none">{["⚡", "💪", "❤️", "🧠", "👁️"][i]}</div>
-              <div className="text-[9px] font-bold font-mono tabular-nums mt-0.5" style={{ color: meta.color }}>
+              <div className="text-sm leading-none">{STAT_ICONS[k]}</div>
+              <div className="text-[8px] font-semibold mt-0.5" style={{ color: meta.color }}>
+                {meta.label}
+              </div>
+              <div className="text-[9px] font-bold font-mono tabular-nums" style={{ color: meta.color }}>
                 {stats[k]}
+              </div>
+              <div className="text-[7px] text-zinc-600 leading-tight max-w-[52px]">
+                {meta.blurb}
               </div>
             </div>
           );

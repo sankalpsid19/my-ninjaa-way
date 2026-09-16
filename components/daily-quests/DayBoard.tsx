@@ -60,28 +60,45 @@ export default function DayBoard() {
   }, []);
 
   const refreshBoard = useCallback(async () => {
-    const res = await getDailyBoard();
-    if (res.ok && res.snapshot) {
-      rolledRef.current = false;
-      setSnapshot(res.snapshot);
+    try {
+      const res = await getDailyBoard();
+      if (res.ok && res.snapshot) {
+        rolledRef.current = false;
+        setSnapshot(res.snapshot);
+        setLoading(false);
+      } else {
+        pushToast(res.reason ?? "Failed to load the board.", "error");
+      }
+    } catch (err) {
+      // Rejected fetch (e.g. stale bundle / action id mismatch after a dev
+      // server restart, or a transient network error). Surface the dojo error
+      // box + Retry instead of getting stuck on "Entering the dojo…".
+      console.error("getDailyBoard rejected:", err);
+      pushToast("Couldn't reach the dojo — check your connection and Retry.", "error");
       setLoading(false);
-    } else {
-      pushToast(res.reason ?? "Failed to load the board.", "error");
     }
   }, [pushToast]);
 
   // Initial load.
   useEffect(() => {
     let alive = true;
-    getDailyBoard().then((res) => {
-      if (!alive) return;
-      if (res.ok && res.snapshot) {
-        setSnapshot(res.snapshot);
-      } else {
-        pushToast(res.reason ?? "Failed to load the board.", "error");
-      }
-      setLoading(false);
-    });
+    getDailyBoard()
+      .then((res) => {
+        if (!alive) return;
+        if (res.ok && res.snapshot) {
+          setSnapshot(res.snapshot);
+        } else {
+          pushToast(res.reason ?? "Failed to load the board.", "error");
+        }
+      })
+      .catch(() => {
+        if (!alive) return;
+        console.error("getDailyBoard rejected during initial load");
+        pushToast("Couldn't reach the dojo — check your connection and Retry.", "error");
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
     return () => {
       alive = false;
     };
