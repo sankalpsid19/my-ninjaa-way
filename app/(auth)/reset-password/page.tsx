@@ -10,7 +10,7 @@ import PasswordInput from "@/components/PasswordInput";
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") || "";
+  const token = (searchParams.get("token") || "").trim();
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -52,7 +52,7 @@ function ResetPasswordForm() {
           router.push("/login");
         }, 2000);
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred.");
       setLoading(false);
     }

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { randomBytes } from "crypto";
 import { sendPasswordResetEmail } from "@/lib/email";
 
@@ -337,12 +338,26 @@ export async function requestPasswordReset(emailInput: string) {
       };
     }
 
+    // Dynamically resolve client origin from request headers
+    let origin: string | undefined;
+    try {
+      const headersList = await headers();
+      const host = headersList.get("x-forwarded-host") || headersList.get("host");
+      const proto = headersList.get("x-forwarded-proto") || "https";
+      if (host) {
+        const protocol = host.includes("localhost") ? (proto || "http") : "https";
+        origin = `${protocol}://${host}`;
+      }
+    } catch {
+      // Headers may not be available in non-request contexts; getResolvedBaseUrl handles fallback
+    }
+
     // Generate secure token & expiration (1 hour)
     const token = randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
     // Save token to DB
-    await prisma.passwordResetToken.create({
+    const createdToken = await prisma.passwordResetToken.create({
       data: {
         email,
         token,
@@ -350,8 +365,19 @@ export async function requestPasswordReset(emailInput: string) {
       },
     });
 
-    // Send email via Resend
-    await sendPasswordResetEmail(email, token);
+    // Send email via Resend with dynamic origin
+    try {
+      await sendPasswordResetEmail(email, token, origin);
+    } catch (emailError) {
+      // Rollback: delete token from DB if email sending fails
+      // so the user is not locked out by the 5-minute rate limit on retry
+      await prisma.passwordResetToken
+        .delete({
+          where: { id: createdToken.id },
+        })
+        .catch(() => {});
+      throw emailError;
+    }
 
     return {
       success: true,
@@ -366,8 +392,9 @@ export async function requestPasswordReset(emailInput: string) {
   }
 }
 
-export async function resetPassword(token: string, newPassword: string) {
+export async function resetPassword(tokenInput: string, newPassword: string) {
   try {
+    const token = (tokenInput || "").trim();
     if (!token) {
       return { success: false, error: "Reset token is missing or invalid." };
     }
