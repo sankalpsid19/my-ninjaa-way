@@ -53,7 +53,17 @@ import type {
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
-  const userId = (session?.user as { id?: string } | undefined)?.id;
+  const user = session?.user as { id?: string; email?: string | null } | undefined;
+  let userId = user?.id;
+
+  if (!userId && user?.email) {
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email.toLowerCase() },
+      select: { id: true },
+    });
+    userId = dbUser?.id;
+  }
+
   if (!userId) throw new Error("Unauthorized. Please sign in.");
   return userId;
 }
@@ -93,22 +103,23 @@ function currentQuestDayKey(resetHour: number, now: Date = new Date()): string {
 }
 
 async function getOrCreate(userId: string): Promise<{ profile: UserQuestProfile; stats: PlayerStats }> {
-  let profile = await prisma.userQuestProfile.findUnique({ where: { userId } });
-  let stats = profile ? await prisma.playerStats.findUnique({ where: { userId } }) : null;
+  const profile = await prisma.userQuestProfile.upsert({
+    where: { userId },
+    update: {},
+    create: {
+      userId,
+      // Random per-user variety seed — rotates workout disciplines & picks
+      // task flavor variants so different users get different tasks.
+      questSeed: Math.floor(Math.random() * 2_147_483_647),
+    },
+  });
 
-  if (!profile) {
-    profile = await prisma.userQuestProfile.create({
-      data: {
-        userId,
-        // Random per-user variety seed — rotates workout disciplines & picks
-        // task flavor variants so different users get different tasks.
-        questSeed: Math.floor(Math.random() * 2_147_483_647),
-      },
-    });
-  }
-  if (!stats) {
-    stats = await prisma.playerStats.create({ data: { userId } });
-  }
+  const stats = await prisma.playerStats.upsert({
+    where: { userId },
+    update: {},
+    create: { userId },
+  });
+
   return { profile, stats };
 }
 
@@ -119,7 +130,12 @@ async function dailyCheckpoint(userId: string, todayKey: string): Promise<void> 
     data: { status: "failed" },
   });
   const profile = await prisma.userQuestProfile.findUnique({ where: { userId } });
-  if (profile && profile.lastCompleteKey && profile.lastCompleteKey < todayKey && profile.startedAt.getTime() < parseDayKey(todayKey).getTime()) {
+  if (
+    profile &&
+    profile.lastCompleteKey &&
+    profile.lastCompleteKey < todayKey &&
+    new Date(profile.startedAt).getTime() < parseDayKey(todayKey).getTime()
+  ) {
     await prisma.playerStats.update({
       where: { userId },
       data: { streak: 0 },

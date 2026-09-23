@@ -1,8 +1,9 @@
 // My Ninjaa Way (MNW) Service Worker
-const CACHE_NAME = 'mnw-pwa-v3';
+const CACHE_NAME = 'mnw-pwa-v4';
 
 const PRECACHE_ASSETS = [
   '/calorie-calculator',
+  '/daily-quests',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
   '/icons/icon-maskable-192x192.png',
@@ -36,12 +37,28 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests, bypass mutations and actions
+  // Only handle GET requests — bypass mutations, server actions, and form posts.
   if (event.request.method !== 'GET') {
     return;
   }
 
   const url = new URL(event.request.url);
+
+  // Never intercept cross-origin requests (external APIs, CDNs, analytics).
+  // Letting them fall through avoids "Failed to fetch" errors for requests
+  // that the SW cannot reliably proxy (CORS, opaque responses, etc.).
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Skip Next.js server-action / RSC payloads — they must reach the server.
+  if (
+    url.searchParams.has('_rsc') ||
+    event.request.headers.get('RSC') === '1' ||
+    url.pathname.startsWith('/api/')
+  ) {
+    return;
+  }
 
   // 1. Stale-While-Revalidate for static Next.js assets, icons, fonts
   if (
@@ -61,7 +78,7 @@ self.addEventListener('fetch', (event) => {
               }
               return networkResponse;
             })
-            .catch(() => cachedResponse);
+            .catch(() => cachedResponse); // silently fall back to cache
 
           return cachedResponse || fetchPromise;
         });
@@ -70,7 +87,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Navigation requests: Network-first with Cache fallback (Offline Calorie Calculator)
+  // 2. Navigation requests: Network-first with Cache fallback
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -84,12 +101,11 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // If network failed, try to serve from cache (e.g. /calorie-calculator)
+          // Network failed — try the cache first.
           return caches.match(event.request).then((cached) => {
-            if (cached) {
-              return cached;
-            }
-            // If completely uncached and offline, return the branded offline card
+            if (cached) return cached;
+
+            // Uncached + offline → branded offline page.
             return new Response(
               `<!DOCTYPE html>
               <html lang="en">
@@ -118,9 +134,7 @@ self.addEventListener('fetch', (event) => {
                 </div>
               </body>
               </html>`,
-              {
-                headers: { 'Content-Type': 'text/html' },
-              }
+              { headers: { 'Content-Type': 'text/html' } }
             );
           });
         })
@@ -128,6 +142,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. All other requests: simple network pass-through
-  event.respondWith(fetch(event.request));
+  // 3. All other same-origin GET requests: network pass-through with silent fallback.
+  //    A .catch() is required — without it, every failed fetch (e.g. a Next.js
+  //    data prefetch that the server hasn't rendered yet) surfaces as an unhandled
+  //    "TypeError: Failed to fetch" in the console.
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      // Return an empty 503 so the browser knows the resource is unavailable
+      // without throwing an unhandled rejection.
+      return new Response(null, { status: 503, statusText: 'Service Unavailable' });
+    })
+  );
 });
