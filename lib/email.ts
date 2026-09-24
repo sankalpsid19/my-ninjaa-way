@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { Resend } from "resend";
+// Resend import removed – using only Gmail SMTP
 
 export function getResolvedBaseUrl(customBaseUrl?: string): string {
   if (customBaseUrl) {
@@ -33,11 +33,13 @@ function getPasswordResetEmailHtml(resetLink: string): string {
       <head>
         <meta charset="utf-8">
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; color: #18181b; padding: 20px; }
-          .container { max-width: 500px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 16px; border: 1px solid #e4e4e7; }
-          .logo { font-size: 24px; font-weight: bold; color: #2563eb; margin-bottom: 24px; text-align: center; }
-          .btn { display: inline-block; background-color: #2563eb; color: #ffffff !important; font-weight: 600; padding: 12px 24px; border-radius: 12px; text-decoration: none; margin: 20px 0; text-align: center; }
-          .footer { margin-top: 24px; font-size: 12px; color: #71717a; text-align: center; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: linear-gradient(135deg, #f0f4ff, #e0e7ff); color: #111827; padding: 20px; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+          .logo { font-size: 28px; font-weight: 700; color: #4f46e5; text-align: center; margin-bottom: 30px; }
+          h2 { font-size: 22px; color: #111827; margin-bottom: 20px; text-align: center; }
+          .btn { display: inline-block; background: linear-gradient(90deg, #4f46e5, #6366f1); color: #ffffff !important; font-weight: 600; padding: 14px 28px; border-radius: 12px; text-decoration: none; margin: 30px 0; text-align: center; }
+          .footer { margin-top: 30px; font-size: 13px; color: #6b7280; text-align: center; }
+          a { color: #4f46e5; word-break: break-all; }
         </style>
       </head>
       <body>
@@ -49,10 +51,8 @@ function getPasswordResetEmailHtml(resetLink: string): string {
             <a href="${resetLink}" class="btn">Reset Password</a>
           </div>
           <p>This link is valid for <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email.</p>
-          <p style="font-size: 12px; color: #71717a; word-break: break-all;">Or copy and paste this link into your browser:<br><a href="${resetLink}">${resetLink}</a></p>
-          <div class="footer">
-            &copy; ${new Date().getFullYear()} My Ninjaa Way. All rights reserved.
-          </div>
+          <p style="font-size: 12px; color: #6b7280; word-break: break-all;">Or copy and paste this link into your browser:<br><a href="${resetLink}">${resetLink}</a></p>
+          <div class="footer">&copy; ${new Date().getFullYear()} My Ninjaa Way. All rights reserved.</div>
         </div>
       </body>
     </html>
@@ -72,7 +72,7 @@ export async function sendPasswordResetEmail(
     console.log(`[Password Reset] Reset link generated for ${email}: ${resetLink}`);
   }
 
-  // 1. Check for Gmail / SMTP credentials (works with any recipient, zero domain verification)
+  // 1️⃣ Prefer Gmail / SMTP if credentials are present.
   const emailUser = process.env.EMAIL_USER || process.env.GMAIL_USER;
   const emailPass =
     process.env.EMAIL_APP_PASSWORD ||
@@ -85,15 +85,15 @@ export async function sendPasswordResetEmail(
         service: "gmail",
         auth: {
           user: emailUser.trim(),
-          // Strip whitespace if user copied Google App Password with spaces
-          pass: emailPass.replace(/\s+/g, ""),
+          // Remove any stray whitespace the user may have copied.
+          pass: emailPass.replace(/\\s+/g, ""),
         },
       });
 
       const fromAddress =
         process.env.EMAIL_FROM ||
         process.env.GMAIL_FROM ||
-        `"My Ninjaa Way" <${emailUser.trim()}>`;
+        `My Ninjaa Way <mixedtantra@gmail.com>`;
 
       const info = await transporter.sendMail({
         from: fromAddress,
@@ -104,47 +104,18 @@ export async function sendPasswordResetEmail(
 
       return { success: true, messageId: info.messageId };
     } catch (smtpError: unknown) {
-      console.error("Gmail SMTP error:", smtpError);
-      const message =
-        smtpError instanceof Error ? smtpError.message : "Failed to send email via Gmail SMTP";
-      throw new Error(`Gmail SMTP error: ${message}`);
+      console.error("⚠️ Gmail SMTP error:", smtpError);
+      const msg = smtpError instanceof Error ? smtpError.message : "Failed to send via Gmail SMTP";
+      throw new Error(`Gmail SMTP error: ${msg}`);
     }
   }
 
-  // 2. Fallback to Resend if configured
-  if (process.env.RESEND_API_KEY) {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const fromAddress =
-      process.env.RESEND_FROM_EMAIL || "My Ninjaa Way <onboarding@resend.dev>";
+// Resend integration removed – using only Gmail SMTP
 
-    const { data, error } = await resend.emails.send({
-      from: fromAddress,
-      to: [email],
-      subject: "Reset your password - My Ninjaa Way",
-      html: htmlContent,
-    });
 
-    if (error) {
-      console.error("Resend email error:", error);
-      const errorObj = error as Record<string, unknown>;
-      const isTestingRestriction =
-        error.message?.includes("testing emails to your own email address") ||
-        errorObj?.statusCode === 403;
-
-      if (isTestingRestriction) {
-        throw new Error(
-          "Email delivery restriction: Resend's default sender (onboarding@resend.dev) can only send emails to the account owner. For Vercel, please set EMAIL_USER and EMAIL_APP_PASSWORD in environment variables to use Gmail SMTP instead."
-        );
-      }
-
-      throw new Error(error.message || "Failed to send password reset email via Resend.");
-    }
-
-    return data;
-  }
-
-  // 3. No email configuration found
+  // 3️⃣ No email service configured – give explicit guidance.
   throw new Error(
-    "Email service is not configured. Please set EMAIL_USER and EMAIL_APP_PASSWORD (for Gmail SMTP) in your Vercel environment variables."
+    "Email service not configured. Set either Gmail credentials (EMAIL_USER & EMAIL_APP_PASSWORD) " +
+    "or a Resend API key (RESEND_API_KEY) with a verified FROM address (RESEND_FROM_EMAIL)."
   );
 }
