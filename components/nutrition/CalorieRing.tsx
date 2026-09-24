@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, Utensils } from "lucide-react";
+import { Plus, Utensils, Pencil } from "lucide-react";
 import { MealData } from "@/lib/nutrition/engine";
 
 interface CalorieRingProps {
@@ -7,6 +7,7 @@ interface CalorieRingProps {
   targetCalories: number;
   meals: MealData[];
   onOpenLogModal: (mealType?: string) => void;
+  onEditTargets?: () => void;
 }
 
 export const CalorieRing: React.FC<CalorieRingProps> = ({
@@ -14,6 +15,7 @@ export const CalorieRing: React.FC<CalorieRingProps> = ({
   targetCalories,
   meals,
   onOpenLogModal,
+  onEditTargets,
 }) => {
   const remaining = targetCalories - consumedCalories;
   const pct = Math.min(Math.round((consumedCalories / targetCalories) * 100), 100);
@@ -70,7 +72,17 @@ export const CalorieRing: React.FC<CalorieRingProps> = ({
           </svg>
           <div className="absolute flex flex-col items-center justify-center text-center">
             <span className="text-3xl font-extrabold text-white">{Math.round(consumedCalories)}</span>
-            <span className="text-xs text-slate-400 font-medium">of {targetCalories} kcal</span>
+            <button
+              type="button"
+              onClick={onEditTargets}
+              className="group/target flex items-center gap-1.5 cursor-pointer py-0.5 px-2 rounded-lg hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-700/60 mt-0.5"
+              title="Click to edit daily targets"
+            >
+              <span className="text-xs text-slate-400 group-hover/target:text-emerald-300 font-medium transition">
+                of {targetCalories} kcal
+              </span>
+              <Pencil className="w-2.5 h-2.5 text-slate-500 group-hover/target:text-emerald-400 transition opacity-70 group-hover/target:opacity-100" />
+            </button>
             <span className={`text-[11px] font-semibold mt-1 px-2 py-0.5 rounded-md ${remaining >= 0 ? "bg-slate-800 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
               {remaining >= 0 ? `${Math.round(remaining)} remaining` : `${Math.abs(Math.round(remaining))} over target`}
             </span>

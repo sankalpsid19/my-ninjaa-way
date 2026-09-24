@@ -13,6 +13,7 @@ import { MealTimeline } from "@/components/nutrition/MealTimeline";
 import { FoodLogModal } from "@/components/nutrition/FoodLogModal";
 import { NutrientDetailModal } from "@/components/nutrition/NutrientDetailModal";
 import { NutritionHistory } from "@/components/nutrition/NutritionHistory";
+import { EditTargetsModal } from "@/components/nutrition/EditTargetsModal";
 import {
   NutritionDaySummary,
   UserTargets,
@@ -34,6 +35,7 @@ export default function NutritionPage() {
   const [logMealType, setLogMealType] = useState("Breakfast");
   const [logQuery, setLogQuery] = useState("");
   const [selectedNutrientId, setSelectedNutrientId] = useState<keyof UserTargets | null>(null);
+  const [showEditTargets, setShowEditTargets] = useState(false);
 
   useEffect(() => {
     if (authStatus === "loading") return;
@@ -151,7 +153,7 @@ export default function NutritionPage() {
   return (
     <div className="min-h-screen text-zinc-900 dark:text-zinc-100 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
       {/* Top Header */}
-      <NutritionHeader dateStr={dateStr} setDateStr={setDateStr} />
+      <NutritionHeader dateStr={dateStr} setDateStr={setDateStr} onEditTargets={() => setShowEditTargets(true)} />
 
       {/* Main Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
@@ -209,6 +211,7 @@ export default function NutritionPage() {
               targetCalories={targets.calories}
               meals={data?.meals || []}
               onOpenLogModal={handleOpenLogModal}
+              onEditTargets={() => setShowEditTargets(true)}
             />
           </div>
 
@@ -277,6 +280,15 @@ export default function NutritionPage() {
           userId={userId}
           onClose={() => setSelectedNutrientId(null)}
           onLogSuggestedFood={(foodName) => handleOpenLogModal("Breakfast", foodName)}
+        />
+      )}
+
+      {showEditTargets && userId && (
+        <EditTargetsModal
+          targets={targets}
+          userId={userId}
+          onClose={() => setShowEditTargets(false)}
+          onSaved={() => fetchTodayData()}
         />
       )}
     </div>

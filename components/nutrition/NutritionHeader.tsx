@@ -1,12 +1,13 @@
 import React from "react";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, SlidersHorizontal } from "lucide-react";
 
 interface NutritionHeaderProps {
   dateStr: string;
   setDateStr: (d: string) => void;
+  onEditTargets?: () => void;
 }
 
-export const NutritionHeader: React.FC<NutritionHeaderProps> = ({ dateStr, setDateStr }) => {
+export const NutritionHeader: React.FC<NutritionHeaderProps> = ({ dateStr, setDateStr, onEditTargets }) => {
   const currentHour = new Date().getHours();
   let greeting = "Good morning";
   if (currentHour >= 12 && currentHour < 17) greeting = "Good afternoon";
@@ -40,27 +41,42 @@ export const NutritionHeader: React.FC<NutritionHeaderProps> = ({ dateStr, setDa
         <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mt-0.5">Your Daily Nutrition</h1>
       </div>
 
-      <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/60 rounded-xl p-1.5 self-start sm:self-auto shadow-inner">
-        <button
-          onClick={handlePrevDay}
-          className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition"
-          title="Previous day"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        
-        <div className="flex items-center gap-2 px-3 py-1 font-medium text-sm text-slate-200">
-          <Calendar className="w-4 h-4 text-emerald-400" />
-          <span>{isToday ? "Today, " + formattedDate.split(", ")[1] : formattedDate}</span>
-        </div>
+      <div className="flex items-center gap-2 self-start sm:self-auto">
+        {/* Edit Targets Button */}
+        {onEditTargets && (
+          <button
+            onClick={onEditTargets}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-750 hover:border-emerald-500/40 border border-slate-700/60 text-slate-200 hover:text-emerald-400 transition shadow-inner text-xs font-semibold group cursor-pointer"
+            title="Edit daily calorie & macro targets"
+          >
+            <SlidersHorizontal className="w-4 h-4 text-emerald-400 group-hover:rotate-45 transition-transform duration-200" />
+            <span>Targets</span>
+          </button>
+        )}
 
-        <button
-          onClick={handleNextDay}
-          className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition"
-          title="Next day"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
+        {/* Date Navigator */}
+        <div className="flex items-center gap-1 bg-slate-800/80 border border-slate-700/60 rounded-xl p-1.5 shadow-inner">
+          <button
+            onClick={handlePrevDay}
+            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition"
+            title="Previous day"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        
+          <div className="flex items-center gap-2 px-3 py-1 font-medium text-sm text-slate-200">
+            <Calendar className="w-4 h-4 text-emerald-400" />
+            <span>{isToday ? "Today, " + formattedDate.split(", ")[1] : formattedDate}</span>
+          </div>
+
+          <button
+            onClick={handleNextDay}
+            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition"
+            title="Next day"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );
