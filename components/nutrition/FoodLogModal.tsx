@@ -52,7 +52,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
   const [foods, setFoods] = useState<FoodItemData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFood, setSelectedFood] = useState<FoodItemData | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
+  const [quantity, setQuantity] = useState<number | string>(1);
   const [unit, setUnit] = useState<string>("g");
   // Guards against out-of-order search responses overwriting newer results.
   const searchSeq = useRef(0);
@@ -135,9 +135,10 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
 
   const handleConfirmLog = () => {
     if (!selectedFood) return;
+    const numQuantity = typeof quantity === "number" ? quantity : parseFloat(String(quantity)) || selectedFood.servingSize || 1;
     // All search results come from the internet — ship the nutrition payload
     // so the meals API can persist the food into the library before logging.
-    onLogFood(selectedFood.id, quantity, unit, mealType, selectedFood);
+    onLogFood(selectedFood.id, numQuantity, unit, mealType, selectedFood);
     onClose();
   };
 
@@ -503,7 +504,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
                 )}
               </div>
               <span className="text-xs font-bold text-emerald-400 shrink-0">
-                {Math.round((selectedFood.calories * quantity) / selectedFood.servingSize)} kcal
+                {Math.round((selectedFood.calories * (typeof quantity === "number" ? quantity : parseFloat(String(quantity)) || 0)) / (selectedFood.servingSize || 1))} kcal
               </span>
             </div>
 
@@ -525,7 +526,12 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
                   min="0.1"
                   step="0.5"
                   value={quantity}
-                  onChange={(e) => setQuantity(parseFloat(e.target.value) || 1)}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  onBlur={() => {
+                    if (quantity === "" || isNaN(Number(quantity)) || Number(quantity) <= 0) {
+                      setQuantity(selectedFood.servingSize || 1);
+                    }
+                  }}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
                 />
               </div>

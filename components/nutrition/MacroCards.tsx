@@ -57,24 +57,24 @@ export const MacroCards: React.FC<MacroCardsProps> = ({ totals, targets, onNutri
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
       {macros.map((m) => {
         const pct = Math.min(Math.round((m.current / m.target) * 100), 100);
         return (
           <div
             key={m.name}
             onClick={() => onNutrientClick && onNutrientClick(m.id)}
-            className={`bg-slate-900/80 backdrop-blur-md border ${m.borderColor} rounded-2xl p-4 shadow-lg cursor-pointer hover:border-slate-600 transition flex flex-col justify-between group`}
+            className={`bg-slate-900/80 backdrop-blur-md border ${m.borderColor} rounded-2xl p-3 sm:p-4 shadow-lg cursor-pointer hover:border-slate-600 active:scale-[0.98] transition flex flex-col justify-between group`}
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-400 group-hover:text-slate-200 transition">{m.name}</span>
               <span className="text-xs font-bold text-slate-300">{pct}%</span>
             </div>
 
-            <div className="my-3">
-              <div className="text-xl font-extrabold text-white tracking-tight">
+            <div className="my-2 sm:my-3">
+              <div className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
                 {m.current}
-                <span className="text-xs font-normal text-slate-400 ml-1">/ {m.target}{m.unit}</span>
+                <span className="text-[11px] sm:text-xs font-normal text-slate-400 ml-1">/ {m.target}{m.unit}</span>
               </div>
             </div>
 

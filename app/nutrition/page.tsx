@@ -151,48 +151,55 @@ export default function NutritionPage() {
   const totals = data?.totals || { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
 
   return (
-    <div className="min-h-screen text-zinc-900 dark:text-zinc-100 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
+    <div className="min-h-screen text-zinc-900 dark:text-zinc-100 p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto font-sans pb-20 sm:pb-8">
       {/* Top Header */}
       <NutritionHeader dateStr={dateStr} setDateStr={setDateStr} onEditTargets={() => setShowEditTargets(true)} />
 
       {/* Main Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+      <div className="flex items-center gap-1.5 sm:gap-2 border-b border-slate-800/80 pb-2 sm:pb-3 overflow-x-auto scrollbar-none -mx-3 px-3 sm:mx-0 sm:px-0">
         <button
           onClick={() => setActiveTab("today")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
+          className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 min-h-[38px] active:scale-95 ${
             activeTab === "today"
               ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
               : "bg-slate-900 text-slate-400 hover:text-white"
           }`}
         >
-          <LayoutDashboard className="w-4 h-4" /> Today
+          <LayoutDashboard className="w-4 h-4 shrink-0" />
+          <span>Today</span>
         </button>
         <button
           onClick={() => setActiveTab("nutrients")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
+          className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 min-h-[38px] active:scale-95 ${
             activeTab === "nutrients"
               ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
               : "bg-slate-900 text-slate-400 hover:text-white"
           }`}
         >
-          <ShieldCheck className="w-4 h-4" /> Nutrients Coverage
+          <ShieldCheck className="w-4 h-4 shrink-0" />
+          <span className="hidden min-[480px]:inline">Nutrients Coverage</span>
+          <span className="min-[480px]:hidden">Nutrients</span>
         </button>
         <button
           onClick={() => setActiveTab("history")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
+          className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 min-h-[38px] active:scale-95 ${
             activeTab === "history"
               ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
               : "bg-slate-900 text-slate-400 hover:text-white"
           }`}
         >
-          <History className="w-4 h-4" /> Trends & History
+          <History className="w-4 h-4 shrink-0" />
+          <span className="hidden min-[480px]:inline">Trends & History</span>
+          <span className="min-[480px]:hidden">History</span>
         </button>
 
         <button
           onClick={() => handleOpenLogModal()}
-          className="ml-auto hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold border border-slate-700/80 transition"
+          className="ml-auto flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold border border-slate-700/80 transition shrink-0 min-h-[38px] active:scale-95"
+          title="Quick log food"
         >
-          <PlusCircle className="w-4 h-4" /> Quick Log
+          <PlusCircle className="w-4 h-4 shrink-0" />
+          <span className="hidden min-[380px]:inline">Quick Log</span>
         </button>
       </div>
 

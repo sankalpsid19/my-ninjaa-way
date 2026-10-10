@@ -22,13 +22,13 @@ export const NutritionScoreCard: React.FC<NutritionScoreCardProps> = ({ score, s
   const strokeDashoffset = 283 - (283 * score) / 100;
 
   return (
-    <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
+    <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
             <Award className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-200">Nutrition Score</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-slate-200">Nutrition Score</h3>
         </div>
         <button
           onClick={() => setShowInfo(true)}

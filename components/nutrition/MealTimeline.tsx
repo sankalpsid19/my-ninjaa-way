@@ -18,7 +18,7 @@ export const MealTimeline: React.FC<MealTimelineProps> = ({
   onSaveMeal,
 }) => {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editQuantity, setEditQuantity] = useState(1);
+  const [editQuantity, setEditQuantity] = useState<number | string>(1);
   const [editUnit, setEditUnit] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [savedMealType, setSavedMealType] = useState<string | null>(null);
@@ -37,7 +37,8 @@ export const MealTimeline: React.FC<MealTimelineProps> = ({
   };
 
   const saveEdit = (itemId: string) => {
-    onEditItem(itemId, editQuantity, editUnit);
+    const num = typeof editQuantity === "number" ? editQuantity : parseFloat(String(editQuantity)) || 1;
+    onEditItem(itemId, num, editUnit);
     setEditingItemId(null);
   };
 
@@ -149,14 +150,19 @@ export const MealTimeline: React.FC<MealTimelineProps> = ({
                         className="text-xs p-2 rounded-lg bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition group"
                       >
                         {editingItemId === item.id ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="font-semibold text-slate-200 min-w-[80px] truncate">{item.food.name}</span>
                             <input
-                              type="number"
+                              type="text" inputMode="numeric" pattern="[0-9]*"
                               min="0.1"
                               step="0.5"
                               value={editQuantity}
-                              onChange={(e) => setEditQuantity(parseFloat(e.target.value) || 1)}
+                              onChange={(e) => setEditQuantity(e.target.value)}
+                              onBlur={() => {
+                                if (editQuantity === "" || isNaN(Number(editQuantity)) || Number(editQuantity) <= 0) {
+                                  setEditQuantity(1);
+                                }
+                              }}
                               className="w-16 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-emerald-500"
                             />
                             <select

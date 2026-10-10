@@ -32,13 +32,13 @@ export const CalorieRing: React.FC<CalorieRingProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+    <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
             <Utensils className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-200">Calories Overview</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-slate-200">Calories Overview</h3>
         </div>
         <button
           onClick={() => onOpenLogModal()}
@@ -90,17 +90,17 @@ export const CalorieRing: React.FC<CalorieRingProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-800">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800">
         {mealTypes.map((type) => {
           const cals = getMealCalories(type);
           return (
             <button
               key={type}
               onClick={() => onOpenLogModal(type)}
-              className="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-left transition flex flex-col justify-between"
+              className="p-2 sm:p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-left transition flex flex-col justify-between min-h-[52px]"
             >
               <span className="text-[11px] text-slate-400 font-medium truncate">{type}</span>
-              <span className="text-sm font-bold text-slate-200">{cals > 0 ? `${cals} kcal` : "-"}</span>
+              <span className="text-xs sm:text-sm font-bold text-slate-200 mt-0.5">{cals > 0 ? `${cals} kcal` : "-"}</span>
             </button>
           );
         })}
