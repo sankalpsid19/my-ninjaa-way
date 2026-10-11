@@ -9,6 +9,70 @@ import { headers } from "next/headers";
 import { randomBytes } from "crypto";
 import { sendPasswordResetEmail } from "@/lib/email";
 
+const FALLBACK_MODULES = [
+  {
+    id: "fallback-calorie-calculator",
+    slug: "calorie-calculator",
+    title: "Calorie Calculator",
+    description: "Estimate daily calorie & macro needs using BMR & TDEE scientific formulas.",
+    icon: "Calculator",
+    href: "/calorie-calculator",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    accessStatus: "approved" as const,
+  },
+  {
+    id: "fallback-nutrition",
+    slug: "nutrition",
+    title: "Nutrition Intelligence",
+    description: "Track daily meals, calories, macros, vitamins, minerals, RDA gaps & daily habit focus.",
+    icon: "Apple",
+    href: "/nutrition",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    accessStatus: "approved" as const,
+  },
+  {
+    id: "fallback-clients",
+    slug: "clients",
+    title: "Client Management",
+    description: "Manage client directory, services, billing, and access control.",
+    icon: "Users",
+    href: "/clients",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    accessStatus: "unauthenticated" as const,
+  },
+  {
+    id: "fallback-daily-quests",
+    slug: "daily-quests",
+    title: "Daily Quests",
+    description: "One quest per day, consistency heatmap, attributes, streaks & the Consistency Ladder.",
+    icon: "Swords",
+    href: "/daily-quests",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    accessStatus: "unauthenticated" as const,
+  },
+];
+
+export async function getFallbackModuleStatuses(session: any) {
+  return FALLBACK_MODULES.map((module) => {
+    if (session && session.user) {
+      const role = (session.user as any).role;
+      if (role === "admin") {
+        return { ...module, accessStatus: "approved" as const };
+      }
+      if (module.slug === "calorie-calculator" || module.slug === "nutrition") {
+        return { ...module, accessStatus: "approved" as const };
+      }
+      return { ...module, accessStatus: module.slug === "clients" ? "unauthenticated" as const : "not_requested" as const };
+    }
+
+    return { ...module, accessStatus: (module.slug === "calorie-calculator" || module.slug === "nutrition") ? "approved" : "unauthenticated" };
+  });
+}
+
 export async function registerUser(formData: {
   name: string;
   email: string;
@@ -203,8 +267,9 @@ export async function getUserModuleStatuses() {
         };
       });
   } catch (error) {
+    const session = await auth().catch(() => null);
     console.error("Error getting module statuses:", error);
-    return [];
+    return getFallbackModuleStatuses(session);
   }
 }
 
