@@ -275,6 +275,7 @@ model QuestLog {
   variant         Int      @default(0) // task flavor variant index chosen at issue time (per-user variety)
   targetMinutes   Int
   progressMinutes Int         @default(0)
+  exerciseProgress Json       @default("{}")
   status          QuestStatus @default(active)
   reflectionNote  String?
   awardedXp       Int         @default(0)
@@ -330,5 +331,4 @@ model UserAchievement {
 
   @@unique([userId, achievementId])
 }
-
 

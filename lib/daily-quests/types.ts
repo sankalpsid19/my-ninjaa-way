@@ -8,6 +8,17 @@ export type Discipline = "strength" | "cardio" | "mobility" | "endurance" | null
 export type QuestStatusType = "active" | "completed" | "failed";
 export type Role = "student" | "adult";
 export type Rotation = "auto" | "manual";
+export type WorkoutExerciseUnit = "reps" | "seconds" | "meters";
+
+export interface WorkoutExerciseProgress {
+  id: string;
+  name: string;
+  instruction: string;
+  target: number;
+  progress: number;
+  unit: WorkoutExerciseUnit;
+  step: number;
+}
 
 export interface QuestSettings {
   role: Role;
@@ -28,6 +39,7 @@ export interface QuestTaskView {
   description: string;
   targetMinutes: number;
   progressMinutes: number;
+  workoutExercises: WorkoutExerciseProgress[];
   status: QuestStatusType;
   reflectionNote: string | null;
   awardedXp: number;

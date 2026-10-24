@@ -56,9 +56,9 @@ export const QUEST_VARIANTS: Record<QuestType, Record<string, readonly QuestVari
       { label: "Stretch & Release", description: "Unwind — targeted stretching and tension release for tight areas." },
     ],
     endurance: [
-      { label: "Endurance (Heavy Day)", description: "Heavy day! Saturday endurance block — go the distance." },
-      { label: "Endurance Builder (Heavy Day)", description: "Heavy day! Saturday endurance block — build the tank for the week ahead." },
-      { label: "Long Haul (Heavy Day)", description: "Heavy day! Saturday endurance block — sustained output at a steady pace." },
+      { label: "Endurance (Heavy Day)", description: "Saturday challenge: complete the push-up, sit-up, squat and walk/run objectives shown below." },
+      { label: "Endurance Builder (Heavy Day)", description: "Build endurance with the listed bodyweight exercises and a comfortable walk/run distance." },
+      { label: "Long Haul (Heavy Day)", description: "Complete the displayed exercise checklist at a steady, sustainable pace; walk breaks count." },
     ],
   },
   study: {

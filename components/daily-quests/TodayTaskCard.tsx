@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Timer } from "lucide-react";
 import type { LadderRungView, Pillar, QuestTaskView, QuestType } from "@/lib/daily-quests/types";
 import { formatCountdown, formatMinutes } from "@/lib/daily-quests/dates";
+import { formatExerciseAmount, isWorkoutPlanComplete } from "@/lib/daily-quests/workout-plan";
 import { rewardFor, PERFECT_DAY_BONUS } from "@/lib/daily-quests/quest-templates";
 import { PILLAR_META, QUEST_TYPE_META, type StatKey } from "./questMeta";
 import LogMinutesModal from "./LogMinutesModal";
+import QuestInfoModal from "./QuestInfoModal";
 
 const STAT_ICONS: Record<StatKey, string> = { strength: "💪", agility: "⚡", stamina: "❤️", intelligence: "🧠", sense: "👁️" };
 
@@ -35,6 +37,7 @@ export default function TodayTaskCard({
   now,
   busy,
   onLog,
+  onLogExercise,
   onComplete,
   onPickTask,
 }: {
@@ -45,20 +48,42 @@ export default function TodayTaskCard({
   now: Date;
   busy: boolean;
   onLog: (minutes: number) => Promise<void>;
+  onLogExercise: (exerciseId: string, amount: number) => Promise<void>;
   onComplete: (note?: string) => Promise<void>;
   onPickTask: (choice: QuestType) => Promise<void>;
 }) {
   const [showLog, setShowLog] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
 
   const meta = QUEST_TYPE_META[task.questType];
-  const percent = Math.min(100, Math.round((task.progressMinutes / Math.max(1, task.targetMinutes)) * 100));
+  const isWorkout = task.questType === "workout";
+  const workoutComplete = isWorkout && isWorkoutPlanComplete(task.workoutExercises);
+  const percent = isWorkout
+    ? Math.round(task.workoutExercises.reduce(
+        (sum, exercise) => sum + (exercise.progress / Math.max(1, exercise.target)) * 100,
+        0,
+      ) / Math.max(1, task.workoutExercises.length))
+    : Math.min(100, Math.round((task.progressMinutes / Math.max(1, task.targetMinutes)) * 100));
   const over = task.progressMinutes > task.targetMinutes;
   const ladderBar = ladder[task.questType];
   const isCompleted = task.status === "completed";
   const isFailed = task.status === "failed";
   const remainingMs = new Date(deadlineAtIso).getTime() - now.getTime();
   const lowTime = remainingMs > 0 && remainingMs < 60 * 60 * 1000;
+  const started = task.progressMinutes > 0 || task.workoutExercises.some((exercise) => exercise.progress > 0);
+  const infoKey = `daily-quest-briefing:${task.id}:${task.questType}:${task.discipline ?? "none"}`;
+
+  useEffect(() => {
+    if (task.status !== "active" || window.localStorage.getItem(infoKey) === "dismissed") return;
+    const timer = window.setTimeout(() => setShowInfo(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [infoKey, task.status]);
+
+  const dismissInfo = () => {
+    window.localStorage.setItem(infoKey, "dismissed");
+    setShowInfo(false);
+  };
 
   if (isFailed) {
     return (
@@ -82,7 +107,7 @@ export default function TodayTaskCard({
   }
 
   return (
-    <article className="rounded-3xl bg-zinc-900/80 border border-zinc-800 p-6 sm:p-8 relative overflow-hidden">
+    <article className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl shadow-black/10 sm:p-7">
       <div
         className="absolute inset-x-0 top-0 h-1 transition-colors duration-700"
         style={{
@@ -93,45 +118,55 @@ export default function TodayTaskCard({
       />
 
       {/* Header row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-3">
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
           <span
-            className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl border"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-2xl"
             style={{ color: meta.color, background: `${meta.color}12`, borderColor: `${meta.color}33` }}
             aria-hidden="true"
           >
             {meta.icon}
           </span>
-          <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-50 tracking-tight leading-tight">{task.label}</h2>
-            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <div className="min-w-0">
+            <h2 className="break-words text-xl font-extrabold leading-tight tracking-tight text-zinc-50 sm:text-2xl">{task.label}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               {task.discipline && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/60 capitalize">
+                <span className="rounded-full border border-zinc-700/60 bg-zinc-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 capitalize">
                   {task.discipline}
                 </span>
               )}
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/25">
+              <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-400">
                 {PILLAR_META[task.questType].label}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25" title="Exactly one task per day">
+              <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-400" title="Exactly one task per day">
                 1/1
               </span>
             </div>
           </div>
         </div>
-      </div>
         {!isCompleted && (
-          <div
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-mono tabular-nums text-sm font-semibold ${
-              lowTime ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-zinc-950/40 border-zinc-700/70 text-zinc-300"
-            }`}
-            aria-live="polite"
-          >
-            <Timer className="w-4 h-4" />
-            {remainingMs > 0 ? formatCountdown(remainingMs) : "rolling over…"}
+          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+            <div
+              className={`flex min-h-10 items-center gap-1.5 rounded-xl border px-3 py-2 font-mono text-sm font-semibold tabular-nums ${
+                lowTime ? "border-red-500/30 bg-red-500/10 text-red-400" : "border-zinc-700/70 bg-zinc-950/40 text-zinc-300"
+              }`}
+              aria-live="polite"
+            >
+              <Timer className="h-4 w-4" />
+              {remainingMs > 0 ? formatCountdown(remainingMs) : "rolling over…"}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowInfo(true)}
+              className="min-h-10 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 transition-colors hover:bg-amber-500/20"
+            >
+              Quest info
+            </button>
           </div>
         )}
-{isCompleted ? (
+      </div>
+
+      {isCompleted ? (
         <div className="text-center py-6">
           <div className="inline-block px-5 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black uppercase tracking-[0.2em] text-sm dq-pop-in">
             <span className="inline-flex items-center gap-2">
@@ -139,7 +174,9 @@ export default function TodayTaskCard({
             </span>
           </div>
           <div className="mt-4 font-mono tabular-nums text-zinc-300 text-sm">
-            {formatMinutes(task.progressMinutes)} / {formatMinutes(task.targetMinutes)}
+            {isWorkout
+              ? `${task.workoutExercises.length} / ${task.workoutExercises.length} objectives completed`
+              : `${formatMinutes(task.progressMinutes)} / ${formatMinutes(task.targetMinutes)}`}
           </div>
           <div className="mt-1 text-xs text-emerald-400 font-bold">+{task.awardedXp} XP earned</div>
           {task.perfectDay && (
@@ -153,7 +190,59 @@ export default function TodayTaskCard({
         </div>
       ) : (
         <>
-          {/* Progress */}
+          {isWorkout ? (
+            <div className="mb-5 grid gap-3 sm:grid-cols-2" aria-label="Workout objective progress">
+              {task.workoutExercises.map((exercise) => {
+                const complete = exercise.progress >= exercise.target;
+                const nextAmount = Math.min(exercise.step, exercise.target - exercise.progress);
+                return (
+                  <div key={exercise.id} className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-4 transition-colors hover:border-zinc-700">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-bold text-zinc-100">{exercise.name}</h3>
+                        <p className="mt-1 text-xs leading-relaxed text-zinc-500">{exercise.instruction}</p>
+                      </div>
+                      <span className="whitespace-nowrap font-mono text-xs font-bold tabular-nums text-amber-300">
+                        {formatExerciseAmount(exercise.progress, exercise.unit)} / {formatExerciseAmount(exercise.target, exercise.unit)}
+                      </span>
+                    </div>
+                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-800">
+                      <div
+                        className="h-full rounded-full bg-emerald-400 transition-all"
+                        style={{ width: `${Math.min(100, (exercise.progress / exercise.target) * 100)}%` }}
+                      />
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => void onLogExercise(exercise.id, nextAmount)}
+                        disabled={busy || complete}
+                        className={`min-h-10 rounded-xl border px-3 py-2 text-xs font-bold transition-colors disabled:cursor-default disabled:opacity-50 ${
+                          complete
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                            : "border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+                        }`}
+                      >
+                        {complete ? "✓ Objective complete" : `Log +${formatExerciseAmount(nextAmount, exercise.unit)}`}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {task.discipline === "endurance" && (
+                <p className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs leading-relaxed text-emerald-200/80">
+                  Split these into sets and take rest breaks. This is a starting challenge, not a test of toughness—scale the movement or stop if it hurts.
+                </p>
+              )}
+              <div className="col-span-full flex items-center justify-between text-xs text-zinc-500">
+                <span>Overall objective progress</span><span className="font-mono">{percent}%</span>
+              </div>
+              <div className="col-span-full h-2 overflow-hidden rounded-full bg-zinc-800">
+                <div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${percent}%` }} />
+              </div>
+            </div>
+          ) : (
+          /* Time-based progress for study and reading */
           <div className="mb-4" aria-live="polite">
             <div className="flex items-baseline justify-between mb-2">
               <div className="font-mono tabular-nums text-2xl font-black text-zinc-100">
@@ -174,7 +263,8 @@ export default function TodayTaskCard({
               />
             </div>
           </div>
-{/* Ladder chip — names the source of difficulty (§4.6) */}
+          )}
+          {/* Ladder chip — names the source of difficulty (§4.6) */}
           {ladderBar && (
             <div className="flex flex-wrap items-center gap-2 mb-5">
               <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold">
@@ -186,28 +276,30 @@ export default function TodayTaskCard({
             </div>
           )}
 
-          {/* Quick log */}
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <div className="flex gap-2">
-              {[15, 30, 60].map((m) => (
-                <button
-                  key={m}
-                  onClick={() => onLog(m)}
-                  disabled={busy}
-                  className="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-bold text-zinc-200 transition-colors disabled:opacity-40 min-h-[44px]"
-                >
-                  +{m}m
-                </button>
-              ))}
+          {/* Quick log for time-based quests */}
+          {!isWorkout && (
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <div className="flex gap-2">
+                {[15, 30, 60].map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => onLog(m)}
+                    disabled={busy}
+                    className="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-bold text-zinc-200 transition-colors disabled:opacity-40 min-h-[44px]"
+                  >
+                    +{m}m
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowLog(true)}
+                disabled={busy}
+                className="px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition-colors disabled:opacity-40 min-h-[44px]"
+              >
+                + Log
+              </button>
             </div>
-            <button
-              onClick={() => setShowLog(true)}
-              disabled={busy}
-              className="px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition-colors disabled:opacity-40 min-h-[44px]"
-            >
-              + Log
-            </button>
-          </div>
+          )}
 
           {/* Rewards preview */}
           <div className="p-4 rounded-2xl bg-zinc-950/50 border border-zinc-800 mb-4">
@@ -215,7 +307,7 @@ export default function TodayTaskCard({
           </div>
 
           {/* Manual rotation — swap before starting (§4.5) */}
-          {rotation === "manual" && task.progressMinutes === 0 && (
+          {rotation === "manual" && !started && (
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <span className="text-xs text-zinc-500 font-semibold">Pick today’s quest:</span>
               {(["workout", "study", "reading"] as QuestType[]).map((q) => (
@@ -242,7 +334,7 @@ export default function TodayTaskCard({
             />
             <button
               onClick={() => onComplete(noteDraft || undefined)}
-              disabled={busy || percent < 100}
+              disabled={busy || (isWorkout ? !workoutComplete : percent < 100)}
               className="px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 text-sm font-black transition-colors disabled:opacity-35 disabled:cursor-not-allowed min-h-[44px]"
             >
               Complete Quest
@@ -252,7 +344,7 @@ export default function TodayTaskCard({
         </>
       )}
 
-      {showLog && (
+      {showLog && !isWorkout && (
         <LogMinutesModal
           task={task}
           busy={busy}
@@ -261,6 +353,7 @@ export default function TodayTaskCard({
           onClose={() => setShowLog(false)}
         />
       )}
+      {showInfo && <QuestInfoModal task={task} remainingMs={remainingMs} onClose={dismissInfo} />}
     </article>
   );
 }

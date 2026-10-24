@@ -12,6 +12,7 @@ import type {
 import {
   getDailyBoard,
   logProgress,
+  logExerciseProgress,
   completeTaskWithReflection,
   pickTodayTask,
 } from "@/lib/actions/daily-quest-actions";
@@ -141,6 +142,22 @@ export default function DayBoard() {
     setBusy(false);
   };
 
+  const handleLogExercise = async (exerciseId: string, amount: number) => {
+    if (busy || !snapshot?.task || snapshot.task.status !== "active") return;
+    setBusy(true);
+    const res = await logExerciseProgress(snapshot.task.id, exerciseId, amount);
+    setBusy(false);
+    if (res.ok && res.snapshot) {
+      setSnapshot(res.snapshot);
+      const exercises = res.snapshot.task?.workoutExercises ?? [];
+      if (exercises.length > 0 && exercises.every((exercise) => exercise.progress >= exercise.target)) {
+        pushToast("All workout objectives reached — complete the quest when you're ready! 💪", "success");
+      }
+    } else {
+      pushToast(res.reason ?? "Failed to log workout progress.", "error");
+    }
+  };
+
   const handleComplete = async (note?: string) => {
     if (busy || !snapshot?.task || snapshot.task.status !== "active") return;
     setBusy(true);
@@ -238,8 +255,8 @@ export default function DayBoard() {
   const todayPerfect = snapshot.task?.status === "completed" && snapshot.task.perfectDay;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <div className="mx-auto max-w-screen-2xl">
         <div className="mb-6">
           <Link
             href="/"
@@ -252,28 +269,28 @@ export default function DayBoard() {
           </Link>
         </div>
 
-        <header className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div>
+        <header className="mb-8 flex flex-col gap-5 border-b border-zinc-800/80 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-2xl" aria-hidden="true">🥷</span>
               <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-400 text-[10px] font-black uppercase tracking-[0.2em]">
                 Dojo — Day {snapshot.dayNumber}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-50">
+            <h1 className="text-2xl font-extrabold tracking-tight text-zinc-50 sm:text-3xl">
               {snapshot.todayKey === new Date().toISOString().slice(0, 10) ? "Today's" : "Tonight's"} Quest
-              <span className="text-zinc-500 font-bold text-lg ml-2.5">
+              <span className="ml-2.5 text-base font-bold text-zinc-500 sm:text-lg">
                 {new Date(`${snapshot.todayKey}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
               </span>
             </h1>
-            <p className="text-xs text-zinc-500 mt-1">
-              The dojo closes at {String(snapshot.profile.resetHour).padStart(2, "0")}:59 local — one task, all-or-nothing.
+            <p className="mt-1 text-xs text-zinc-500">
+              Daily reset at {String(snapshot.profile.resetHour).padStart(2, "0")}:00 local time
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <div
-              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border font-mono tabular-nums text-base font-bold ${
+              className={`flex min-h-11 items-center gap-1.5 rounded-xl border px-3.5 py-2.5 font-mono text-base font-bold tabular-nums ${
                 lowTime ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-zinc-900/80 border-zinc-800 text-amber-300"
               }`}
               aria-live="polite"
@@ -300,11 +317,10 @@ export default function DayBoard() {
             </button>
           </div>
         </header>
-{/* Bento grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] xl:gap-6">
           {/* Character panel */}
           <section className="space-y-5" aria-label="Character panel">
-            <div className="p-6 rounded-3xl bg-zinc-900/80 border border-zinc-800">
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Character</h2>
                 <button
@@ -319,7 +335,7 @@ export default function DayBoard() {
                 <StreakFlame streak={snapshot.stats.streak} bestStreak={snapshot.stats.bestStreak} />
               </div>
             </div>
-            <div className="p-6 rounded-3xl bg-zinc-900/80 border border-zinc-800">
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5 sm:p-6">
               <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">Attributes</h3>
               <StatHexagon stats={snapshot.stats} glow={todayPerfect} />
               <p className="text-center text-[10px] text-zinc-600 mt-3">
@@ -332,6 +348,7 @@ export default function DayBoard() {
           <section className="space-y-5" aria-label="Task of the day">
             {snapshot.task ? (
               <TodayTaskCard
+                key={`${snapshot.task.id}:${snapshot.task.questType}:${snapshot.task.discipline}`}
                 task={snapshot.task}
                 ladder={snapshot.ladder}
                 rotation={snapshot.profile.rotation}
@@ -339,6 +356,7 @@ export default function DayBoard() {
                 now={now}
                 busy={busy}
                 onLog={handleLog}
+                onLogExercise={handleLogExercise}
                 onComplete={handleComplete}
                 onPickTask={handlePickTask}
               />
@@ -357,7 +375,7 @@ export default function DayBoard() {
           </section>
         </div>
       </div>
-{showSettings && (
+      {showSettings && (
         <SettingsPanel
           profile={snapshot.profile}
           onSaved={(snap) => {

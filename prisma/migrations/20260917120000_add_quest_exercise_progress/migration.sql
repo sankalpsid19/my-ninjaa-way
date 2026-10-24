@@ -1,0 +1,2 @@
+ALTER TABLE "QuestLog"
+ADD COLUMN IF NOT EXISTS "exerciseProgress" JSONB NOT NULL DEFAULT '{}'::jsonb;

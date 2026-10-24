@@ -31,6 +31,11 @@ import {
   evaluatePredicate,
 } from "@/lib/daily-quests/engine";
 import { labelFor, descriptionFor, rewardFor, PERFECT_DAY_BONUS } from "@/lib/daily-quests/quest-templates";
+import {
+  getWorkoutExerciseProgress,
+  getWorkoutPlan,
+  isWorkoutPlanComplete,
+} from "@/lib/daily-quests/workout-plan";
 import type {
   Pillar,
   QuestType,
@@ -199,6 +204,7 @@ function toTaskView(log: QuestLog): QuestTaskView {
     description: descriptionFor(questType, discipline, log.variant),
     targetMinutes: log.targetMinutes,
     progressMinutes: log.progressMinutes,
+    workoutExercises: getWorkoutExerciseProgress(discipline, log.exerciseProgress, log.targetMinutes),
     status: log.status.toLowerCase() as QuestStatusType,
     reflectionNote: log.reflectionNote,
     awardedXp: log.awardedXp,
@@ -423,10 +429,22 @@ async function finalizeCompletion(
   const settings = settingsFromProfile(profile);
   const todayKey = currentQuestDayKey(settings.resetHour);
   if (task.date !== todayKey) return { ok: false, reason: "This quest already rolled over into a new day." };
+  if (task.status !== "active") {
+    return {
+      ok: false,
+      reason: task.status === "completed" ? "Quest already completed." : "This quest has expired.",
+    };
+  }
+
+  const isWorkout = task.questType.toLowerCase() === "workout";
+  const exercises = getWorkoutExerciseProgress(task.discipline as Discipline, task.exerciseProgress, task.targetMinutes);
+  if (isWorkout && !isWorkoutPlanComplete(exercises)) {
+    return { ok: false, reason: "Finish each workout objective before completing this quest." };
+  }
 
   const cappedTarget = Math.round(task.targetMinutes * 1.5);
   const newProgress = Math.min(cappedTarget, task.progressMinutes + Math.max(0, addedMinutes));
-  if (newProgress < task.targetMinutes) {
+  if (!isWorkout && newProgress < task.targetMinutes) {
     return { ok: false, reason: "Target not reached yet — keep going!" };
   }
 
@@ -490,6 +508,9 @@ export async function logProgress(taskId: string, minutes: number): Promise<Acti
     const userId = await requireUserId();
     const task = await prisma.questLog.findUnique({ where: { id: taskId } });
     if (!task || task.userId !== userId) return { ok: false, reason: "Quest not found." };
+    if (task.questType.toLowerCase() === "workout") {
+      return { ok: false, reason: "Track workout exercises using the objective checklist." };
+    }
     const { profile } = await getOrCreate(userId);
     const settings = settingsFromProfile(profile);
     const todayKey = currentQuestDayKey(settings.resetHour);
@@ -511,6 +532,60 @@ export async function logProgress(taskId: string, minutes: number): Promise<Acti
   } catch (error) {
     console.error("logProgress error:", error);
     return { ok: false, reason: error instanceof Error ? error.message : "Failed to log progress." };
+  }
+}
+
+/** Persist progress against one of today's concrete workout objectives. */
+export async function logExerciseProgress(
+  taskId: string,
+  exerciseId: string,
+  amount: number,
+): Promise<ActionResult> {
+  try {
+    const userId = await requireUserId();
+    const task = await prisma.questLog.findUnique({ where: { id: taskId } });
+    if (!task || task.userId !== userId) return { ok: false, reason: "Quest not found." };
+    if (task.status !== "active" || task.questType.toLowerCase() !== "workout") {
+      return { ok: false, reason: "This quest has no active workout objectives." };
+    }
+    if (!Number.isInteger(amount) || amount <= 0) {
+      return { ok: false, reason: "Progress must be a positive whole number." };
+    }
+
+    const exercise = getWorkoutPlan(task.discipline as Discipline, task.targetMinutes)
+      .find((item) => item.id === exerciseId);
+    if (!exercise) return { ok: false, reason: "Unknown workout objective." };
+
+    const { profile } = await getOrCreate(userId);
+    const todayKey = currentQuestDayKey(settingsFromProfile(profile).resetHour);
+    if (task.date !== todayKey) return { ok: false, reason: "This quest already rolled over into a new day." };
+
+    const current = getWorkoutExerciseProgress(
+      task.discipline as Discipline,
+      task.exerciseProgress,
+      task.targetMinutes,
+    )
+      .find((item) => item.id === exerciseId)?.progress ?? 0;
+    const next = Math.min(exercise.target, current + amount);
+    const savedProgress =
+      typeof task.exerciseProgress === "object" &&
+      task.exerciseProgress !== null &&
+      !Array.isArray(task.exerciseProgress)
+        ? task.exerciseProgress
+        : {};
+
+    await prisma.questLog.update({
+      where: { id: task.id },
+      data: { exerciseProgress: { ...savedProgress, [exerciseId]: next } },
+    });
+
+    const fresh = await getOrCreate(userId);
+    const snapshot = await buildSnapshot(userId, fresh.profile, fresh.stats, todayKey);
+    revalidatePath("/daily-quests");
+    return { ok: true, snapshot };
+  } catch (error) {
+    console.error("logExerciseProgress error:", error);
+    return { ok: false, reason: error instanceof Error ? error.message : "Failed to log exercise progress." };
   }
 }
 
@@ -537,7 +612,15 @@ export async function pickTodayTask(choice: QuestType): Promise<ActionResult> {
     const todayKey = currentQuestDayKey(settings.resetHour);
     const task = await ensureTodayTask(userId, todayKey);
     if (task.status !== "active") return { ok: false, reason: "This quest can't be changed anymore." };
-    if (task.progressMinutes > 0) return { ok: false, reason: "Already started — quests lock once progress begins." };
+    const exerciseProgress =
+      typeof task.exerciseProgress === "object" &&
+      task.exerciseProgress !== null &&
+      !Array.isArray(task.exerciseProgress)
+        ? Object.values(task.exerciseProgress).some((value) => typeof value === "number" && value > 0)
+        : false;
+    if (task.progressMinutes > 0 || exerciseProgress) {
+      return { ok: false, reason: "Already started — quests lock once progress begins." };
+    }
     if (choice !== "workout" && choice !== "study" && choice !== "reading") {
       return { ok: false, reason: "Unknown quest type." };
     }
@@ -551,6 +634,7 @@ export async function pickTodayTask(choice: QuestType): Promise<ActionResult> {
         discipline: template.discipline,
         variant: template.variant,
         targetMinutes: template.targetMinutes,
+        exerciseProgress: {},
       },
     });
 
