@@ -4,10 +4,18 @@ import { X, Search, Star, History, Sparkles, UtensilsCrossed, Globe } from "luci
 
 interface FoodLogModalProps {
   userId: string;
+  initialDate: string;
   initialMealType?: string;
   initialQuery?: string;
   onClose: () => void;
-  onLogFood: (foodId: string, quantity: number, unit: string, mealType: string, foodData?: FoodItemData) => void;
+  onLogFood: (
+    foodId: string,
+    quantity: number,
+    unit: string,
+    mealType: string,
+    date: string,
+    foodData?: FoodItemData,
+  ) => Promise<void>;
 }
 
 interface RecentFood {
@@ -42,12 +50,14 @@ interface SavedMealEntry {
 
 export const FoodLogModal: React.FC<FoodLogModalProps> = ({
   userId,
+  initialDate,
   initialMealType = "Breakfast",
   initialQuery = "",
   onClose,
   onLogFood,
 }) => {
   const [mealType, setMealType] = useState(initialMealType);
+  const [logDate, setLogDate] = useState(initialDate);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [foods, setFoods] = useState<FoodItemData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +72,8 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
   const [savedMeals, setSavedMeals] = useState<SavedMealEntry[]>([]);
   const [nlpText, setNlpText] = useState("");
   const [internetUnavailable, setInternetUnavailable] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
+  const [isLogging, setIsLogging] = useState(false);
   const [activeTab, setActiveTab] = useState<"search" | "nlp" | "recent" | "favorites" | "saved">(
     initialQuery ? "search" : "search"
   );
@@ -122,6 +134,8 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
   }, [userId]);
 
   useEffect(() => {
+    // These callbacks start async fetches; their state updates happen after the responses.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRecent();
     fetchFavorites();
     fetchSavedMeals();
@@ -133,20 +147,46 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
     setUnit(food.servingUnit || "g");
   };
 
-  const handleConfirmLog = () => {
+  const handleConfirmLog = async () => {
     if (!selectedFood) return;
+    if (!logDate) {
+      setLogError("Choose a date before logging this food.");
+      return;
+    }
     const numQuantity = typeof quantity === "number" ? quantity : parseFloat(String(quantity)) || selectedFood.servingSize || 1;
     // All search results come from the internet — ship the nutrition payload
     // so the meals API can persist the food into the library before logging.
-    onLogFood(selectedFood.id, numQuantity, unit, mealType, selectedFood);
-    onClose();
+    setIsLogging(true);
+    setLogError(null);
+    try {
+      await onLogFood(selectedFood.id, numQuantity, unit, mealType, logDate, selectedFood);
+      onClose();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setLogError(message);
+    } finally {
+      setIsLogging(false);
+    }
   };
 
-  const handleLogSavedMeal = (meal: SavedMealEntry) => {
-    meal.items.forEach((item) => {
-      onLogFood(item.foodId, item.quantity, item.unit, mealType);
-    });
-    onClose();
+  const handleLogSavedMeal = async (meal: SavedMealEntry) => {
+    if (!logDate) {
+      setLogError("Choose a date before logging this meal.");
+      return;
+    }
+    setIsLogging(true);
+    setLogError(null);
+    try {
+      for (const item of meal.items) {
+        await onLogFood(item.foodId, item.quantity, item.unit, mealType, logDate);
+      }
+      onClose();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setLogError(message);
+    } finally {
+      setIsLogging(false);
+    }
   };
 
   const handleToggleFavorite = async (foodId: string) => {
@@ -218,7 +258,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label="Add food"
-        className="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6 max-w-xl w-full shadow-2xl relative flex flex-col h-[92dvh] sm:h-auto sm:max-h-[90vh]"
+        className="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6 max-w-xl w-full shadow-2xl relative flex flex-col h-[92dvh] sm:h-auto sm:max-h-[90vh] overflow-y-auto overscroll-contain"
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-slate-800 shrink-0">
@@ -229,6 +269,25 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
           <button onClick={onClose} aria-label="Close" className="text-slate-400 hover:text-white p-2 sm:p-1.5 rounded-full bg-slate-800 shrink-0">
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        <div className="shrink-0 my-3 sm:my-4">
+          <label
+            htmlFor="food-log-date"
+            className="text-xs text-slate-300 font-semibold block mb-1.5"
+          >
+            Date <span className="text-rose-400">*</span>
+          </label>
+          <input
+            id="food-log-date"
+            name="date"
+            type="date"
+            value={logDate}
+            onChange={(event) => setLogDate(event.target.value)}
+            required
+            aria-required="true"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+          />
         </div>
 
         {/* Meal Type Selector */}
@@ -437,7 +496,8 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
                     </div>
                     <button
                       onClick={() => handleLogSavedMeal(meal)}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 text-[11px] font-bold hover:bg-emerald-400 transition shrink-0"
+                      disabled={isLogging || !logDate}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 text-[11px] font-bold hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0"
                     >
                       Log all
                     </button>
@@ -557,11 +617,17 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
 
             <button
               onClick={handleConfirmLog}
-              className="w-full mt-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/20 transition active:scale-98"
+              disabled={isLogging || !logDate}
+              className="w-full mt-4 py-3 mb-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/20 transition active:scale-98"
             >
-              Add to {mealType}
+              {isLogging ? "Logging..." : `Add to ${mealType}`}
             </button>
           </div>
+        )}
+        {logError && (
+          <p className="mt-3 text-sm text-rose-300 shrink-0" role="alert">
+            {logError}
+          </p>
         )}
       </div>
     </div>

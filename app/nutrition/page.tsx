@@ -22,11 +22,18 @@ import {
 } from "@/lib/nutrition/engine";
 import { LayoutDashboard, PlusCircle, ShieldCheck, History } from "lucide-react";
 
+function getLocalDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function NutritionPage() {
   const { data: session, status: authStatus } = useSession();
-  const userId = (session?.user as any)?.id as string | undefined;
+  const userId = (session?.user as { id?: string } | undefined)?.id;
 
-  const [dateStr, setDateStr] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [dateStr, setDateStr] = useState<string>(() => getLocalDateKey(new Date()));
   const [activeTab, setActiveTab] = useState<"today" | "nutrients" | "history">("today");
   const [data, setData] = useState<NutritionDaySummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,12 +44,7 @@ export default function NutritionPage() {
   const [selectedNutrientId, setSelectedNutrientId] = useState<keyof UserTargets | null>(null);
   const [showEditTargets, setShowEditTargets] = useState(false);
 
-  useEffect(() => {
-    if (authStatus === "loading") return;
-    fetchTodayData();
-  }, [dateStr, authStatus, userId]);
-
-  const fetchTodayData = async () => {
+  const fetchTodayData = useCallback(async () => {
     setLoading(true);
     try {
       const uid = userId || "";
@@ -54,7 +56,14 @@ export default function NutritionPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateStr, userId]);
+
+  useEffect(() => {
+    if (authStatus === "loading") return;
+    // Fetching the selected day is the external synchronization for this effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchTodayData();
+  }, [authStatus, fetchTodayData]);
 
   const handleOpenLogModal = useCallback((mealType: string = "Breakfast", query: string = "") => {
     setLogMealType(mealType);
@@ -62,15 +71,22 @@ export default function NutritionPage() {
     setShowLogModal(true);
   }, []);
 
-  const handleLogFood = async (foodId: string, quantity: number, unit: string, mealType: string, foodData?: FoodItemData) => {
-    if (!userId) return;
+  const handleLogFood = async (
+    foodId: string,
+    quantity: number,
+    unit: string,
+    mealType: string,
+    date: string,
+    foodData?: FoodItemData,
+  ) => {
+    if (!userId) throw new Error("You must be signed in to log food.");
     try {
-      await fetch("/api/meals", {
+      const response = await fetch("/api/meals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
-          date: dateStr,
+          date,
           mealType,
           foodId,
           quantity,
@@ -78,9 +94,18 @@ export default function NutritionPage() {
           ...(foodData ? { foodData } : {}),
         }),
       });
-      fetchTodayData();
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || "Failed to log food.");
+      }
+      if (date === dateStr) {
+        await fetchTodayData();
+      } else {
+        setDateStr(date);
+      }
     } catch (err) {
       console.error(err);
+      throw err;
     }
   };
 
@@ -272,6 +297,7 @@ export default function NutritionPage() {
       {showLogModal && userId && (
         <FoodLogModal
           userId={userId}
+          initialDate={dateStr}
           initialMealType={logMealType}
           initialQuery={logQuery}
           onClose={() => setShowLogModal(false)}

@@ -1,6 +1,19 @@
 import React from "react";
 import { ChevronLeft, ChevronRight, Calendar, SlidersHorizontal } from "lucide-react";
 
+function getLocalDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(dateStr: string, days: number) {
+  const date = new Date(`${dateStr}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 interface NutritionHeaderProps {
   dateStr: string;
   setDateStr: (d: string) => void;
@@ -20,19 +33,10 @@ export const NutritionHeader: React.FC<NutritionHeaderProps> = ({ dateStr, setDa
     day: "numeric",
   });
 
-  const handlePrevDay = () => {
-    const d = new Date(dateStr + "T00:00:00");
-    d.setDate(d.getDate() - 1);
-    setDateStr(d.toISOString().split("T")[0]);
-  };
-
-  const handleNextDay = () => {
-    const d = new Date(dateStr + "T00:00:00");
-    d.setDate(d.getDate() + 1);
-    setDateStr(d.toISOString().split("T")[0]);
-  };
-
-  const isToday = dateStr === new Date().toISOString().split("T")[0];
+  const today = getLocalDateKey(new Date());
+  const isToday = dateStr === today;
+  const handlePrevDay = () => setDateStr(addDays(dateStr, -1));
+  const handleNextDay = () => setDateStr(addDays(dateStr, 1));
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl">
@@ -58,20 +62,33 @@ export const NutritionHeader: React.FC<NutritionHeaderProps> = ({ dateStr, setDa
         <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-800/80 border border-slate-700/60 rounded-xl p-1 sm:p-1.5 shadow-inner">
           <button
             onClick={handlePrevDay}
+            type="button"
             className="p-1 sm:p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition"
             title="Previous day"
           >
             <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         
-          <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 font-medium text-xs sm:text-sm text-slate-200 truncate">
+          <label className="relative flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 font-medium text-xs sm:text-sm text-slate-200">
             <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
-            <span className="truncate">{isToday ? "Today, " + formattedDate.split(", ")[1] : formattedDate}</span>
-          </div>
+            <span className="whitespace-nowrap">{isToday ? `Today, ${formattedDate.split(", ")[1]}` : formattedDate}</span>
+            <input
+              aria-label="Jump to a date"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              max={today}
+              onChange={(event) => {
+                if (event.target.value) setDateStr(event.target.value);
+              }}
+              type="date"
+              value={dateStr}
+            />
+          </label>
 
           <button
             onClick={handleNextDay}
-            className="p-1 sm:p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition"
+            type="button"
+            disabled={isToday || dateStr > today}
+            className="p-1 sm:p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
             title="Next day"
           >
             <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
